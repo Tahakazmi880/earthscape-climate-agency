@@ -1,0 +1,38 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; background: #F2F4F7; color: #222; }
+header { background: #1F3864; color: #fff; padding: 12px 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+.brand { font-size: 21px; font-weight: 700; }
+.brand span { color: #9DC3E6; font-weight: 400; }
+nav { display: flex; gap: 14px; flex-wrap: wrap; }
+nav a, .userbox a { color: #DDEBF7; text-decoration: none; font-size: 14px; }
+nav a:hover, .userbox a:hover { text-decoration: underline; }
+.userbox { margin-left: auto; font-size: 13px; color: #BDD7EE; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 16px 40px; }
+h1 { color: #1F3864; margin: 4px 0 16px; font-size: 26px; }
+h2 { color: #1F3864; font-size: 18px; margin-top: 0; }
+footer { text-align: center; color: #667; font-size: 12.5px; padding: 18px 8px 26px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.card { background: #fff; border: 1px solid #D6DCE4; border-top: 4px solid #1F3864; border-radius: 6px; padding: 16px 12px; text-align: center; }
+.card.alert { border-top-color: #C00000; }
+.card .num { font-size: 25px; font-weight: 700; color: #1F3864; }
+.card.alert .num { color: #C00000; }
+.card .lab { font-size: 12.5px; color: #555; margin-top: 5px; }
+.panel { background: #fff; border: 1px solid #D6DCE4; border-radius: 6px; padding: 18px; margin-bottom: 18px; }
+.panel.narrow { max-width: 560px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 14px; }
+th { background: #1F3864; color: #fff; text-align: left; padding: 8px 10px; }
+td { border-bottom: 1px solid #E1E6EC; padding: 7px 10px; }
+tr.severe { background: #FDECEC; }
+tr.high { background: #FFF4E5; }
+.loginbox { max-width: 400px; margin: 60px auto; background: #fff; border: 1px solid #D6DCE4; border-radius: 8px; padding: 28px; }
+.loginbox h2 { text-align: center; margin-bottom: 2px; }
+.loginbox .sub { text-align: center; color: #555; margin-top: 0; }
+.loginbox .hint { font-size: 12.5px; color: #666; text-align: center; }
+label { display: block; font-size: 13.5px; margin: 12px 0 4px; font-weight: 600; }
+input, select, textarea { width: 100%; padding: 9px 10px; border: 1px solid #B9C4D0; border-radius: 4px; font-size: 14px; }
+button { background: #1F3864; color: #fff; border: 0; padding: 10px 18px; border-radius: 4px; font-size: 14.5px; cursor: pointer; margin-top: 16px; }
+button:hover { background: #2E5496; }
+.flash { background: #E7F4E4; border: 1px solid #9CCC8F; padding: 10px 14px; border-radius: 5px; margin-bottom: 14px; font-size: 14px; }
+.statsline { margin: 12px 0; font-size: 14px; color: #1F3864; font-weight: 600; }
