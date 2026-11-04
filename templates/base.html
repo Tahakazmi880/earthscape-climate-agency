@@ -19,6 +19,7 @@
     <a href="{{ url_for('correlation') }}">Correlation</a>
     <a href="{{ url_for('upload') }}">Upload Data</a>
     <a href="{{ url_for('feedback') }}">Feedback and Support</a>
+    <a href="{{ url_for('help_page') }}">Help and FAQ</a>
     {% if session.get('role') == 'Administrator' %}
     <a href="{{ url_for('admin') }}">Admin</a>
     {% endif %}
