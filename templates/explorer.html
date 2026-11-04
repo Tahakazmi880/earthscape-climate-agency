@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Data Explorer</h1>
+<div class="panel">
+  <label for="country">Select a country:</label>
+  <select id="country">
+    {% for c in countries %}<option value="{{ c }}" {% if c == 'Pakistan' %}selected{% endif %}>{{ c }}</option>{% endfor %}
+  </select>
+  <div id="stats" class="statsline"></div>
+  <canvas id="countryChart"></canvas>
+</div>
+<script>
+let chart;
+async function loadCountry(name) {
+  const r = await fetch('/api/country/' + encodeURIComponent(name));
+  const d = await r.json();
+  document.getElementById('stats').textContent =
+    d.country + ': ' + d.records + ' yearly records, ' + d.from + ' to ' + d.to +
+    ' | average ' + d.average + ' C | lowest ' + d.minimum + ' C | highest ' + d.maximum + ' C';
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById('countryChart'), {type: 'line',
+    data: {labels: d.points.map(p => p[0]),
+           datasets: [{label: 'Yearly average temperature (C)', data: d.points.map(p => p[1]),
+                       borderColor: '#1F3864', pointRadius: 0, borderWidth: 1.2}]},
+    options: {scales: {x: {ticks: {maxTicksLimit: 14}}}}});
+}
+document.getElementById('country').addEventListener('change', e => loadCountry(e.target.value));
+loadCountry('Pakistan');
+</script>
+{% endblock %}
