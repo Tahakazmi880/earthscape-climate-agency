@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Feedback and Support</h1>
+<div class="panel narrow">
+  <p>Report an issue or send feedback to the EarthScape support team.</p>
+  <form method="post">
+    <label>Your name</label>
+    <input type="text" name="name" required>
+    <label>Email</label>
+    <input type="email" name="email" required>
+    <label>Type</label>
+    <select name="type">
+      <option>Feedback</option><option>Issue report</option><option>Support request</option>
+    </select>
+    <label>Message</label>
+    <textarea name="message" rows="5" required></textarea>
+    <button type="submit">Submit</button>
+  </form>
+</div>
+{% endblock %}
