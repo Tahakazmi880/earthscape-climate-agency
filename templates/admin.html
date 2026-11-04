@@ -7,7 +7,25 @@
     <tr><th>Username</th><th>Full name</th><th>Role</th></tr>
     {% for u in users %}<tr><td>{{ u.username }}</td><td>{{ u.name }}</td><td>{{ u.role }}</td></tr>{% endfor %}
   </table>
-  <p>Alert threshold: <b>{{ threshold }} C</b> above the 1951 to 1980 baseline.</p>
+  <p>Alert threshold: <b>{{ threshold }} C</b> above the 1951 to 1980 baseline. Alerts and the live
+  anomaly checker use this setting.</p>
+  <form method="post" action="{{ url_for('set_threshold') }}">
+    <label>Set alert threshold (C, between 0.5 and 5.0)</label>
+    <input type="number" step="0.1" min="0.5" max="5.0" name="threshold" value="{{ threshold }}" style="max-width:220px">
+    <button type="submit">Update threshold</button>
+  </form>
+</div>
+<div class="panel">
+  <h2>System and Data</h2>
+  <table>
+    <tr><th>Item</th><th>Value</th></tr>
+    <tr><td>Total climate records sourced (5 Berkeley Earth files)</td><td>{{ stats.total_records }}</td></tr>
+    <tr><td>Rows after cleaning (main country file)</td><td>{{ stats.cleaned_rows }}</td></tr>
+    <tr><td>Countries available in the Data Explorer</td><td>{{ stats.countries }}</td></tr>
+    <tr><td>Pakistan months checked for anomalies (2001 to 2013)</td><td>{{ stats.months_checked }}</td></tr>
+    <tr><td>Prediction model test error (RMSE, Model 2)</td><td>{{ stats.model_rmse }} C</td></tr>
+    <tr><td>Feedback and support submissions received</td><td>{{ stats.feedback_count }}</td></tr>
+  </table>
 </div>
 <div class="panel">
   <h2>Feedback and Support Submissions</h2>
