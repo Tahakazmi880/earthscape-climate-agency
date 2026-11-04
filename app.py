@@ -28,6 +28,20 @@ ALERTS = load("alerts.json")
 ANOM_PER_YEAR = load("anomalies_per_year.json")
 CO2 = load("co2.json")
 BASELINE = load("pakistan_baseline.json")
+MONTHS_CHECKED = load("months_checked.json")
+SETTINGS_FILE = os.path.join(BASE, "data", "settings.json")
+_threshold_global = [None]
+
+def current_threshold():
+    if session.get("threshold"):
+        return float(session["threshold"])
+    if _threshold_global[0] is not None:
+        return _threshold_global[0]
+    try:
+        with open(SETTINGS_FILE) as f:
+            return float(json.load(f)["threshold"])
+    except Exception:
+        return ALERT_THRESHOLD
 MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July",
                "August", "September", "October", "November", "December"]
 
@@ -121,7 +135,10 @@ def predictions():
 @app.route("/alerts")
 @login_required
 def alerts():
-    return render_template("alerts.html", alerts=ALERTS, threshold=ALERT_THRESHOLD)
+    th = current_threshold()
+    rows = [r for r in MONTHS_CHECKED if r[3] >= th]
+    return render_template("alerts.html", alerts=rows, threshold=th,
+                           months_checked=len(MONTHS_CHECKED))
 
 # ---------------- Correlation ----------------
 @app.route("/correlation")
@@ -160,11 +177,11 @@ def api_anomaly_check():
                                  "Please enter a realistic value." % temp}), 400
     baseline = BASELINE[str(month)]
     diff = round(temp - baseline, 2)
-    alert = diff >= ALERT_THRESHOLD
+    alert = diff >= current_threshold()
     level = "Severe" if diff >= 3 else "High" if diff >= 2 else "Moderate" if alert else "Normal"
     return jsonify({"month": MONTH_NAMES[month - 1], "temperature": temp, "baseline": baseline,
                     "difference": diff, "alert": alert, "level": level,
-                    "threshold": ALERT_THRESHOLD})
+                    "threshold": current_threshold()})
 
 # ---------------- Live tool: data upload and processing ----------------
 UPLOAD_DIR = os.path.join(tempfile.gettempdir(), "earthscape_uploads")
@@ -249,6 +266,9 @@ def feedback():
             "message": request.form.get("message", "").strip(),
             "by": session.get("user"),
         }
+        if not entry["name"] or not entry["message"]:
+            flash("Please enter your name and a message before submitting.")
+            return redirect(url_for("feedback"))
         items = read_feedback()
         items.append(entry)
         try:
@@ -272,8 +292,39 @@ def help_page():
 @admin_required
 def admin():
     users = [{"username": u, "role": d["role"], "name": d["name"]} for u, d in USERS.items()]
+    errs = [(a - p) ** 2 for _, a, p in MODEL["test_years"]]
+    stats = {
+        "total_records": "10,064,718",
+        "cleaned_rows": "544,811",
+        "countries": len(YEARLY),
+        "months_checked": len(MONTHS_CHECKED),
+        "model_rmse": round((sum(errs) / len(errs)) ** 0.5, 2),
+        "feedback_count": len(read_feedback()),
+    }
     return render_template("admin.html", users=users, feedback=read_feedback(),
-                           threshold=ALERT_THRESHOLD)
+                           threshold=current_threshold(), stats=stats)
+
+@app.route("/admin/threshold", methods=["POST"])
+@login_required
+@admin_required
+def set_threshold():
+    try:
+        val = float(request.form.get("threshold", ""))
+    except ValueError:
+        flash("Enter a valid threshold value.")
+        return redirect(url_for("admin"))
+    if val < 0.5 or val > 5.0:
+        flash("Threshold must be between 0.5 and 5.0 C.")
+        return redirect(url_for("admin"))
+    _threshold_global[0] = val
+    session["threshold"] = val
+    try:
+        with open(SETTINGS_FILE, "w") as f:
+            json.dump({"threshold": val}, f)
+    except OSError:
+        pass  # read-only hosting: value still applies for this deployment session
+    flash("Alert threshold updated to %g C." % val)
+    return redirect(url_for("admin"))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
