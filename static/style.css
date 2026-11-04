@@ -84,3 +84,4 @@ button:hover, .btn:hover { filter: brightness(1.1); }
   .grid2 { grid-template-columns: 1fr; }
   main { padding: 20px 16px; }
 }
+.foot { color: #5c7185; font-size: 12.5px; line-height: 1.6; border-top: 1px solid #1c2632; padding-top: 14px; margin-top: 6px; }
