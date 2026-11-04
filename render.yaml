@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: earthscape-climate-agency
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
