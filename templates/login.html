@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Login - EarthScape{% endblock %}
+{% block content %}
+<div class="loginbox">
+  <h2>EarthScape Climate Agency</h2>
+  <p class="sub">Climate data platform. Please sign in.</p>
+  <form method="post">
+    <label>Username</label>
+    <input type="text" name="username" required>
+    <label>Password</label>
+    <input type="password" name="password" required>
+    <button type="submit">Sign In</button>
+  </form>
+  <p class="hint">Demo accounts: admin / admin123 &nbsp;|&nbsp; analyst / analyst123</p>
+</div>
+{% endblock %}
