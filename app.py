@@ -12,7 +12,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-import json, os
+import csv, io, json, os, statistics, tempfile, uuid
 
 app = Flask(__name__)
 app.secret_key = "earthscape-secret-key"
@@ -27,6 +27,9 @@ MODEL = load("pakistan_model.json")
 ALERTS = load("alerts.json")
 ANOM_PER_YEAR = load("anomalies_per_year.json")
 CO2 = load("co2.json")
+BASELINE = load("pakistan_baseline.json")
+MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July",
+               "August", "September", "October", "November", "December"]
 
 # ---------------- Users and roles ----------------
 USERS = {
@@ -124,6 +127,102 @@ def alerts():
 @login_required
 def correlation():
     return render_template("correlation.html", co2=CO2)
+
+# ---------------- Live tool: prediction ----------------
+@app.route("/api/predict")
+@login_required
+def api_predict():
+    try:
+        year = int(request.args.get("year", ""))
+    except ValueError:
+        return jsonify({"error": "Please enter a valid year."}), 400
+    if year < 2014 or year > 2100:
+        return jsonify({"error": "Enter a future year between 2014 and 2100."}), 400
+    pred = MODEL["slope"] * year + MODEL["intercept"]
+    return jsonify({"year": year, "prediction": round(pred, 2),
+                    "note": "Model 2: Linear Regression trained on Pakistan data, 1950 to 2000."})
+
+# ---------------- Live tool: anomaly checker ----------------
+@app.route("/api/anomaly-check")
+@login_required
+def api_anomaly_check():
+    try:
+        month = int(request.args.get("month", ""))
+        temp = float(request.args.get("temp", ""))
+    except ValueError:
+        return jsonify({"error": "Select a month and enter a temperature."}), 400
+    if month < 1 or month > 12:
+        return jsonify({"error": "Invalid month."}), 400
+    baseline = BASELINE[str(month)]
+    diff = round(temp - baseline, 2)
+    alert = diff >= ALERT_THRESHOLD
+    level = "Severe" if diff >= 3 else "High" if diff >= 2 else "Moderate" if alert else "Normal"
+    return jsonify({"month": MONTH_NAMES[month - 1], "temperature": temp, "baseline": baseline,
+                    "difference": diff, "alert": alert, "level": level,
+                    "threshold": ALERT_THRESHOLD})
+
+# ---------------- Live tool: data upload and processing ----------------
+UPLOAD_DIR = os.path.join(tempfile.gettempdir(), "earthscape_uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@app.route("/upload")
+@login_required
+def upload():
+    return render_template("upload.html")
+
+@app.route("/api/upload", methods=["POST"])
+@login_required
+def api_upload():
+    f = request.files.get("file")
+    if not f or not f.filename.lower().endswith(".csv"):
+        return jsonify({"error": "Please choose a CSV file."}), 400
+    raw = f.read()
+    if len(raw) > 8 * 1024 * 1024:
+        return jsonify({"error": "File is too large (maximum 8 MB)."}), 400
+    try:
+        rows = list(csv.DictReader(io.StringIO(raw.decode("utf-8", "replace"))))
+    except Exception:
+        return jsonify({"error": "Could not read this CSV file."}), 400
+    if not rows:
+        return jsonify({"error": "The file has no data rows."}), 400
+    cols = rows[0].keys()
+    temp_col = next((c for c in cols if "temperature" in c.lower() and "uncertainty" not in c.lower()), None)
+    date_col = next((c for c in cols if c.lower() in ("dt", "date", "month", "year")), None)
+    country_col = next((c for c in cols if c.lower() == "country"), None)
+    if not temp_col or not date_col:
+        return jsonify({"error": "The CSV needs a date column (dt) and a temperature column, like the project dataset."}), 400
+    missing = sum(1 for r in rows if not r[temp_col])
+    countries = sorted({r[country_col] for r in rows if country_col and r[country_col]}) if country_col else []
+    token = uuid.uuid4().hex
+    with open(os.path.join(UPLOAD_DIR, token + ".json"), "w") as fh:
+        json.dump({"rows": rows, "temp_col": temp_col, "date_col": date_col, "country_col": country_col}, fh)
+    return jsonify({"token": token, "total_rows": len(rows), "missing_temperatures": missing,
+                    "usable_rows": len(rows) - missing, "countries": countries,
+                    "columns": list(cols)})
+
+@app.route("/api/upload-series")
+@login_required
+def api_upload_series():
+    token = request.args.get("token", "")
+    country = request.args.get("country", "")
+    path = os.path.join(UPLOAD_DIR, token + ".json")
+    if not os.path.exists(path):
+        return jsonify({"error": "Upload session expired. Please upload again."}), 404
+    with open(path) as fh:
+        saved = json.load(fh)
+    rows, tc, dc, cc = saved["rows"], saved["temp_col"], saved["date_col"], saved["country_col"]
+    per_year = {}
+    for r in rows:
+        if cc and country and r.get(cc) != country:
+            continue
+        try:
+            year = int(str(r[dc])[:4])
+            val = float(r[tc])
+        except (TypeError, ValueError):
+            continue
+        per_year.setdefault(year, []).append(val)
+    series = [[y, round(statistics.mean(v), 2)] for y, v in sorted(per_year.items())]
+    return jsonify({"country": country or "All data", "points": series, "years": len(series)})
 
 # ---------------- Feedback and support ----------------
 FEEDBACK_FILE = os.path.join(BASE, "data", "feedback.json")
