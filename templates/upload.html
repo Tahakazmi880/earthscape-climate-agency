@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Upload and Process Data</h1>
+<div class="panel">
+  <p>Upload a climate CSV file (same format as the project dataset: a <b>dt</b> date column and an
+  <b>AverageTemperature</b> column, with an optional <b>Country</b> column). The system processes it
+  live: it counts the rows, finds missing values, and builds the yearly average chart.</p>
+  <label>Choose CSV file (maximum 8 MB)</label>
+  <input type="file" id="upFile" accept=".csv">
+  <button type="button" id="upBtn">Process File</button>
+  <div id="upSummary" class="statsline"></div>
+  <div id="upCountryWrap" style="display:none">
+    <label>Country</label>
+    <select id="upCountry" style="max-width:260px"></select>
+  </div>
+  <canvas id="upChart"></canvas>
+</div>
+<script>
+let token = null, chart = null;
+async function loadSeries(country) {
+  const r = await fetch('/api/upload-series?token=' + token + '&country=' + encodeURIComponent(country || ''));
+  const d = await r.json();
+  if (d.error) { document.getElementById('upSummary').textContent = d.error; return; }
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById('upChart'), {type: 'line',
+    data: {labels: d.points.map(p => p[0]),
+           datasets: [{label: 'Yearly average temperature: ' + d.country, data: d.points.map(p => p[1]),
+                       borderColor: '#1F3864', pointRadius: 0, borderWidth: 1.2}]},
+    options: {scales: {x: {ticks: {maxTicksLimit: 14}}}}});
+}
+document.getElementById('upBtn').addEventListener('click', async () => {
+  const f = document.getElementById('upFile').files[0];
+  const sum = document.getElementById('upSummary');
+  if (!f) { sum.textContent = 'Please choose a CSV file first.'; return; }
+  const fd = new FormData(); fd.append('file', f);
+  sum.textContent = 'Processing...';
+  const r = await fetch('/api/upload', {method: 'POST', body: fd});
+  const d = await r.json();
+  if (d.error) { sum.textContent = d.error; return; }
+  token = d.token;
+  sum.textContent = 'Processed live: ' + d.total_rows + ' rows found, ' + d.missing_temperatures +
+    ' rows with missing temperature, ' + d.usable_rows + ' usable rows.' +
+    (d.countries.length ? ' Countries in file: ' + d.countries.length + '.' : '');
+  const wrap = document.getElementById('upCountryWrap');
+  const sel = document.getElementById('upCountry');
+  if (d.countries.length) {
+    sel.innerHTML = d.countries.map(c => '<option>' + c + '</option>').join('');
+    wrap.style.display = 'block';
+    const def = d.countries.includes('Pakistan') ? 'Pakistan' : d.countries[0];
+    sel.value = def;
+    loadSeries(def);
+  } else {
+    wrap.style.display = 'none';
+    loadSeries('');
+  }
+});
+document.getElementById('upCountry').addEventListener('change', e => loadSeries(e.target.value));
+</script>
+{% endblock %}
