@@ -88,7 +88,8 @@ def dashboard():
     }
     pak = YEARLY["Pakistan"]
     return render_template("dashboard.html", stats=stats, pakistan=pak,
-                           model=MODEL, anom_per_year=ANOM_PER_YEAR)
+                           model=MODEL, anom_per_year=ANOM_PER_YEAR,
+                           recent=load("recent_data.json"))
 
 # ---------------- Data explorer ----------------
 @app.route("/explorer")
