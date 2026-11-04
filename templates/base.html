@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}EarthScape Climate Agency{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand">EarthScape <span>Climate Agency</span></div>
+  {% if session.get('user') %}
+  <nav>
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('explorer') }}">Data Explorer</a>
+    <a href="{{ url_for('predictions') }}">Predictions</a>
+    <a href="{{ url_for('alerts') }}">Alerts</a>
+    <a href="{{ url_for('correlation') }}">Correlation</a>
+    <a href="{{ url_for('feedback') }}">Feedback and Support</a>
+    {% if session.get('role') == 'Administrator' %}
+    <a href="{{ url_for('admin') }}">Admin</a>
+    {% endif %}
+  </nav>
+  <div class="userbox">{{ session.get('name') }} ({{ session.get('role') }}) | <a href="{{ url_for('logout') }}">Logout</a></div>
+  {% endif %}
+</header>
+<main>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}{% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}{% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer>EarthScape Climate Agency | eProject: Big Data Climate Analysis | Data source: Berkeley Earth (Kaggle)</footer>
+</body>
+</html>
