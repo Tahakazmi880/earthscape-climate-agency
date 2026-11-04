@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Anomaly Alerts</h1>
+<div class="panel">
+  <p>An alert is raised when a month's average temperature is <b>{{ threshold }} C or more above its normal
+  (baseline) temperature</b>, where the baseline is the 1951 to 1980 average of the same month for Pakistan.
+  Between 2001 and 2013, 152 months were checked and <b>{{ alerts|length }} alerts</b> were generated.</p>
+  <table>
+    <tr><th>#</th><th>Month</th><th>Actual temperature</th><th>Baseline (normal)</th><th>Above normal</th><th>Level</th></tr>
+    {% for d, a, b, x in alerts %}
+    <tr class="{% if x >= 3 %}severe{% elif x >= 2 %}high{% endif %}">
+      <td>{{ loop.index }}</td><td>{{ d }}</td><td>{{ a }} C</td><td>{{ b }} C</td><td>+{{ x }} C</td>
+      <td>{% if x >= 3 %}Severe{% elif x >= 2 %}High{% else %}Moderate{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
