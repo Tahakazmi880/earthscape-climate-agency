@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Help and FAQ</h1>
+<div class="panel">
+  <h2>User Guide</h2>
+  <p><b>Dashboard:</b> The home page. It shows the key figures of the project, the interpretation of the
+  results, the Pakistan temperature trend with the model forecast, and the anomaly alerts per year.</p>
+  <p><b>Data Explorer:</b> Select any of the 242 countries to see its yearly average temperature chart
+  with its record range, average, lowest and highest values.</p>
+  <p><b>Predictions:</b> Shows the trained models and their test results. Use the Live Prediction Tool
+  to enter any future year (2014 to 2100) and get the model's prediction immediately.</p>
+  <p><b>Alerts:</b> Lists the anomaly alerts found in the data. Use the Live Anomaly Checker to test any
+  month: enter its average temperature and the system compares it with the 1951 to 1980 baseline and
+  tells you whether an alert would be raised.</p>
+  <p><b>Correlation:</b> Shows the relation between CO2 and global temperature as a scatter chart.
+  The correlation value is 0.9655.</p>
+  <p><b>Upload Data:</b> Upload your own climate CSV file (dt and AverageTemperature columns). The
+  system processes it live and draws the yearly chart.</p>
+  <p><b>Feedback and Support:</b> Send feedback, report an issue, or ask for support. Administrators
+  can read all submissions on the Admin page.</p>
+</div>
+<div class="panel">
+  <h2>Frequently Asked Questions</h2>
+  <p><b>Where does the data come from?</b><br>
+  The Berkeley Earth "Climate Change: Earth Surface Temperature Data" dataset (Kaggle), which contains
+  measured land temperature records from weather stations worldwide, plus NOAA CO2 data for 1959 to 2025.</p>
+  <p><b>What is an anomaly alert?</b><br>
+  A month is flagged when its average temperature is 1.5 C or more above its baseline, where the
+  baseline is the 1951 to 1980 average of the same month. Alerts are graded Moderate, High and Severe.</p>
+  <p><b>How accurate is the prediction model?</b><br>
+  Model 2 (trained on 1950 to 2000 data) has a test RMSE of 0.52 C on the years 2001 to 2013. It is a
+  trend model: it shows the long term direction, not exact yearly values.</p>
+  <p><b>Why does the country data end in 2013?</b><br>
+  The Berkeley Earth country dataset's records end in 2013. The CO2 companion data runs to 2025.</p>
+  <p><b>Who can see the Admin page?</b><br>
+  Only users with the Administrator role. Analysts are denied access, as defined in the access control
+  design of the project.</p>
+</div>
+{% endblock %}
