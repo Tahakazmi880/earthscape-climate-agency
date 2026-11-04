@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel narrow">
+  <h2>Access Denied</h2>
+  <p>This page is available to Administrators only. Your current role does not have access.</p>
+  <p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+</div>
+{% endblock %}
