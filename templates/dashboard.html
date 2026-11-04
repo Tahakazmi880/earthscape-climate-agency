@@ -30,6 +30,14 @@
     <canvas id="anomChart"></canvas>
   </div>
 </div>
+<div class="panel">
+  <h2>Recent Observations: Pakistan (Copernicus ERA5)</h2>
+  <p>The Berkeley Earth records used for model training end in 2013. For current monitoring, the agency also
+  tracks Copernicus ERA5 observations (via Our World in Data). Pakistan's yearly average temperature reached
+  <b>21.46 C in 2025</b>, among the warmest years in the ERA5 record, which continues the warming direction
+  shown by the trained model.</p>
+  <canvas id="recentChart"></canvas>
+</div>
 <script>
 const pak = {{ pakistan|tojson }};
 const fc = {{ model.forecasts|tojson }};
@@ -47,5 +55,9 @@ const apy = {{ anom_per_year|tojson }};
 new Chart(document.getElementById('anomChart'), {type: 'bar',
   data: {labels: Object.keys(apy), datasets: [{label: 'Anomalous months', data: Object.values(apy), backgroundColor: '#f0a13c'}]},
   options: {plugins: {legend: {display: false}}}});
+const recent = {{ recent.pakistan_yearly|tojson }};
+new Chart(document.getElementById('recentChart'), {type: 'bar',
+  data: {labels: Object.keys(recent), datasets: [{label: 'Pakistan yearly average temperature (C)', data: Object.values(recent), backgroundColor: '#3ecf8e'}]},
+  options: {plugins: {legend: {display: false}}, scales: {y: {min: 19}}}});
 </script>
 {% endblock %}
