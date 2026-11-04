@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Temperature Trend Prediction</h1>
+<div class="panel">
+  <p>A Linear Regression model was trained on Pakistan yearly average temperatures with a time based
+  split (the model is tested only on future years). Model 1 used all history from 1816 and gave a high
+  error. Model 2, trained on the modern record from 1950, reduced the error clearly.</p>
+  <table>
+    <tr><th>Model</th><th>Training years</th><th>Test years</th><th>RMSE</th><th>R squared</th></tr>
+    <tr><td>Model 1</td><td>1816 to 2000</td><td>2001 to 2013</td><td>0.87 C</td><td>-5.906</td></tr>
+    <tr><td><b>Model 2 (improved)</b></td><td>1950 to 2000</td><td>2001 to 2013</td><td><b>0.52 C</b></td><td>-1.447</td></tr>
+  </table>
+  <p>The negative R squared shows that a straight trend line cannot explain year to year variation;
+  the model is used for the long term trend and future estimates.</p>
+</div>
+<div class="grid2">
+  <div class="panel">
+    <h2>Test Years: Actual vs Predicted</h2>
+    <canvas id="testChart"></canvas>
+  </div>
+  <div class="panel">
+    <h2>Future Predictions (Model 2)</h2>
+    <table>
+      <tr><th>Year</th><th>Predicted average temperature</th></tr>
+      {% for y in ['2030', '2040', '2050'] %}
+      <tr><td>{{ y }}</td><td>{{ model.forecasts[y] }} C</td></tr>
+      {% endfor %}
+    </table>
+    <p>Pakistan is predicted to keep warming slowly, reaching about <b>22.07 C by 2050</b>.</p>
+  </div>
+</div>
+<script>
+const ty = {{ model.test_years|tojson }};
+new Chart(document.getElementById('testChart'), {type: 'line',
+  data: {labels: ty.map(r => r[0]), datasets: [
+    {label: 'Actual', data: ty.map(r => r[1]), borderColor: '#1F3864', pointRadius: 3},
+    {label: 'Predicted', data: ty.map(r => r[2]), borderColor: '#C00000', pointRadius: 3, borderDash: [5, 4]}
+  ]}});
+</script>
+{% endblock %}
