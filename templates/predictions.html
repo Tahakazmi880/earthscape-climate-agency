@@ -13,6 +13,24 @@
   <p>The negative R squared shows that a straight trend line cannot explain year to year variation;
   the model is used for the long term trend and future estimates.</p>
 </div>
+
+<div class="panel">
+  <h2>Live Prediction Tool</h2>
+  <p>Enter any future year and the trained model calculates its prediction on the spot:</p>
+  <label>Year (2014 to 2100)</label>
+  <input type="number" id="predYear" value="2035" min="2014" max="2100" style="max-width:200px">
+  <button type="button" id="predBtn">Predict</button>
+  <div id="predResult" class="statsline"></div>
+</div>
+<script>
+document.getElementById('predBtn').addEventListener('click', async () => {
+  const y = document.getElementById('predYear').value;
+  const r = await fetch('/api/predict?year=' + encodeURIComponent(y));
+  const d = await r.json();
+  document.getElementById('predResult').textContent = d.error ? d.error :
+    'Predicted average temperature of Pakistan in ' + d.year + ': ' + d.prediction + ' C  (' + d.note + ')';
+});
+</script>
 <div class="grid2">
   <div class="panel">
     <h2>Test Years: Actual vs Predicted</h2>
