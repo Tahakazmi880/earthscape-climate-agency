@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Administration</h1>
+<div class="panel">
+  <h2>Users and Roles</h2>
+  <table>
+    <tr><th>Username</th><th>Full name</th><th>Role</th></tr>
+    {% for u in users %}<tr><td>{{ u.username }}</td><td>{{ u.name }}</td><td>{{ u.role }}</td></tr>{% endfor %}
+  </table>
+  <p>Alert threshold: <b>{{ threshold }} C</b> above the 1951 to 1980 baseline.</p>
+</div>
+<div class="panel">
+  <h2>Feedback and Support Submissions</h2>
+  {% if feedback %}
+  <table>
+    <tr><th>Name</th><th>Email</th><th>Type</th><th>Message</th><th>Submitted by</th></tr>
+    {% for f in feedback %}<tr><td>{{ f.name }}</td><td>{{ f.email }}</td><td>{{ f.type }}</td><td>{{ f.message }}</td><td>{{ f.by }}</td></tr>{% endfor %}
+  </table>
+  {% else %}<p>No submissions yet.</p>{% endif %}
+</div>
+{% endblock %}
