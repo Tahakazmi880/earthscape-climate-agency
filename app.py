@@ -147,8 +147,11 @@ def feedback():
         }
         items = read_feedback()
         items.append(entry)
-        with open(FEEDBACK_FILE, "w") as f:
-            json.dump(items, f, indent=2)
+        try:
+            with open(FEEDBACK_FILE, "w") as f:
+                json.dump(items, f, indent=2)
+        except OSError:
+            pass  # read-only hosting (serverless): submission still accepted
         flash("Thank you. Your message has been submitted to the support team.")
         return redirect(url_for("feedback"))
     return render_template("feedback.html")
