@@ -154,6 +154,10 @@ def api_anomaly_check():
         return jsonify({"error": "Select a month and enter a temperature."}), 400
     if month < 1 or month > 12:
         return jsonify({"error": "Invalid month."}), 400
+    if temp < -60 or temp > 50:
+        return jsonify({"error": "A monthly average temperature of %g C is not physically possible. "
+                                 "Monthly averages recorded on Earth fall roughly between -60 C and +45 C. "
+                                 "Please enter a realistic value." % temp}), 400
     baseline = BASELINE[str(month)]
     diff = round(temp - baseline, 2)
     alert = diff >= ALERT_THRESHOLD
