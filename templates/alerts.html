@@ -4,7 +4,7 @@
 <div class="panel">
   <p>An alert is raised when a month's average temperature is <b>{{ threshold }} C or more above its normal
   (baseline) temperature</b>, where the baseline is the 1951 to 1980 average of the same month for Pakistan.
-  Between 2001 and 2013, 152 months were checked and <b>{{ alerts|length }} alerts</b> were generated.</p>
+  Between 2001 and 2013, {{ months_checked }} months were checked and <b>{{ alerts|length }} alerts</b> were generated.</p>
   <h2>Live Anomaly Checker</h2>
   <p>Check any month yourself: enter its average temperature and the system compares it with the
   1951 to 1980 baseline right now and tells you whether an alert would be raised.</p>
