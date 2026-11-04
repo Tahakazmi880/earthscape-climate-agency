@@ -85,3 +85,4 @@ button:hover, .btn:hover { filter: brightness(1.1); }
   main { padding: 20px 16px; }
 }
 .foot { color: #5c7185; font-size: 12.5px; line-height: 1.6; border-top: 1px solid #1c2632; padding-top: 14px; margin-top: 6px; }
+.flash { background: #173d2a; border: 1px solid #2c6a47; color: #a9ecc9; border-radius: 10px; padding: 11px 14px; margin-bottom: 16px; font-size: 14px; }
