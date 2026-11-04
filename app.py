@@ -255,6 +255,12 @@ def feedback():
         return redirect(url_for("feedback"))
     return render_template("feedback.html")
 
+# ---------------- Help and user guide ----------------
+@app.route("/help")
+@login_required
+def help_page():
+    return render_template("help.html")
+
 # ---------------- Admin ----------------
 @app.route("/admin")
 @login_required
