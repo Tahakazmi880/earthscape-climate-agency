@@ -8,31 +8,72 @@
 <script src="{{ url_for('static', filename='chart.umd.min.js') }}"></script>
 </head>
 <body>
-<header>
-  <div class="brand">EarthScape <span>Climate Agency</span></div>
-  {% if session.get('user') %}
-  <nav>
-    <a href="{{ url_for('dashboard') }}">Dashboard</a>
-    <a href="{{ url_for('explorer') }}">Data Explorer</a>
-    <a href="{{ url_for('predictions') }}">Predictions</a>
-    <a href="{{ url_for('alerts') }}">Alerts</a>
-    <a href="{{ url_for('correlation') }}">Correlation</a>
-    <a href="{{ url_for('upload') }}">Upload Data</a>
-    <a href="{{ url_for('feedback') }}">Feedback and Support</a>
-    <a href="{{ url_for('help_page') }}">Help and FAQ</a>
-    {% if session.get('role') == 'Administrator' %}
-    <a href="{{ url_for('admin') }}">Admin</a>
-    {% endif %}
-  </nav>
-  <div class="userbox">{{ session.get('name') }} ({{ session.get('role') }}) | <a href="{{ url_for('logout') }}">Logout</a></div>
-  {% endif %}
-</header>
-<main>
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}{% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}{% endif %}
-  {% endwith %}
+{% if session.get('user') %}
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span>EarthScape</div>
+    <div class="brandsub">Climate Agency</div>
+    <nav>
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('explorer') }}">Data Explorer</a>
+      <a href="{{ url_for('predictions') }}">Predictions</a>
+      <a href="{{ url_for('alerts') }}">Alerts</a>
+      <a href="{{ url_for('correlation') }}">Correlation</a>
+      <a href="{{ url_for('upload') }}">Upload Data</a>
+      <a href="{{ url_for('feedback') }}">Feedback and Support</a>
+      <a href="{{ url_for('help_page') }}">Help and FAQ</a>
+      {% if session.get('role') == 'Administrator' %}
+      <a href="{{ url_for('admin') }}">Admin</a>
+      {% endif %}
+    </nav>
+    <div class="userbox">
+      <div class="uname">{{ session.get('name') }}</div>
+      <div class="urole">{{ session.get('role') }}</div>
+      <a class="logout" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+  </aside>
+  <main>
   {% block content %}{% endblock %}
+  </main>
+</div>
+{% else %}
+<main class="bare">
+  {% block content_login %}{% endblock %}
 </main>
-<footer>EarthScape Climate Agency | eProject: Big Data Climate Analysis | Data source: Berkeley Earth (Kaggle)</footer>
+{% endif %}
+<script>
+// Active nav highlight
+document.querySelectorAll('.sidebar nav a').forEach(function(a){
+  if (a.getAttribute('href') === window.location.pathname) a.classList.add('active');
+});
+// Cards and panels land in reading order, staggered (like a dashboard intro)
+var items = document.querySelectorAll('.card, .panel, .loginbox');
+items.forEach(function(el, i){
+  el.style.animationDelay = (i * 0.08) + 's';
+  el.classList.add('land');
+});
+// Animated counters
+document.querySelectorAll('[data-count]').forEach(function(el){
+  var target = parseFloat(el.getAttribute('data-count'));
+  var dec = parseInt(el.getAttribute('data-dec') || '0');
+  var dur = 1300, start = null;
+  function frame(ts){
+    if (!start) start = ts;
+    var p = Math.min((ts - start) / dur, 1);
+    var eased = 1 - Math.pow(2, -10 * p);
+    var val = target * eased;
+    el.textContent = dec > 0 ? val.toFixed(dec) : Math.round(val).toLocaleString('en-US');
+    if (p < 1) requestAnimationFrame(frame);
+    else el.textContent = dec > 0 ? target.toFixed(dec) : Math.round(target).toLocaleString('en-US');
+  }
+  requestAnimationFrame(frame);
+});
+// Chart defaults for the dark theme
+if (window.Chart) {
+  Chart.defaults.color = '#93a5b5';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
+  Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
+}
+</script>
 </body>
 </html>
