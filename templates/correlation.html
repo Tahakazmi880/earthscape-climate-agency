@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Correlation Analysis: CO2 and Temperature</h1>
+<div class="panel">
+  <p>The Pearson correlation between yearly CO2 levels and global land temperature (1959 to 2025) is
+  <b>0.9655</b>. A value this close to 1 means a very strong positive relation: as CO2 increased,
+  temperature increased with it.</p>
+  <canvas id="co2Chart"></canvas>
+</div>
+<script>
+const co2 = {{ co2|tojson }};
+new Chart(document.getElementById('co2Chart'), {type: 'scatter',
+  data: {datasets: [{label: 'Yearly CO2 vs temperature', data: co2.map(r => ({x: r[1], y: r[2]})), backgroundColor: '#1F3864'}]},
+  options: {scales: {x: {title: {display: true, text: 'CO2 (ppm)'}},
+                     y: {title: {display: true, text: 'Land temperature'}}}}});
+</script>
+{% endblock %}
