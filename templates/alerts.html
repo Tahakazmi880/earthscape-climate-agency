@@ -26,11 +26,11 @@
     const r = await fetch('/api/anomaly-check?month=' + m + '&temp=' + encodeURIComponent(t));
     const d = await r.json();
     const el = document.getElementById('chkResult');
-    if (d.error) { el.textContent = d.error; el.style.color = '#f0a13c'; return; }
+    if (d.error) { el.textContent = d.error; el.style.color = '#B45309'; return; }
     el.textContent = d.month + ': actual ' + d.temperature + ' C, baseline ' + d.baseline + ' C, difference +' +
       d.difference + ' C. ' + (d.alert ? 'ALERT RAISED (' + d.level + '): this month is abnormally hot.' :
       'No alert: this month is within the normal range.');
-    el.style.color = d.alert ? '#ff8a7a' : '#6fe3a5';
+    el.style.color = d.alert ? '#C00000' : '#2E7D32';
   });
   </script>
 
