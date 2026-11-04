@@ -9,74 +9,33 @@
 </head>
 <body>
 {% if session.get('user') %}
-<div class="shell">
-  <aside class="sidebar">
-    <div class="brand"><span class="dot"></span>EarthScape</div>
-    <div class="brandsub">Climate Agency</div>
-    <nav>
-      <a href="{{ url_for('dashboard') }}">Dashboard</a>
-      <a href="{{ url_for('explorer') }}">Data Explorer</a>
-      <a href="{{ url_for('predictions') }}">Predictions</a>
-      <a href="{{ url_for('alerts') }}">Alerts</a>
-      <a href="{{ url_for('correlation') }}">Correlation</a>
-      <a href="{{ url_for('upload') }}">Upload Data</a>
-      <a href="{{ url_for('feedback') }}">Feedback and Support</a>
-      <a href="{{ url_for('help_page') }}">Help and FAQ</a>
-      {% if session.get('role') == 'Administrator' %}
-      <a href="{{ url_for('admin') }}">Admin</a>
-      {% endif %}
-    </nav>
-    <div class="userbox">
-      <div class="uname">{{ session.get('name') }}</div>
-      <div class="urole">{{ session.get('role') }}</div>
-      <a class="logout" href="{{ url_for('logout') }}">Logout</a>
-    </div>
-  </aside>
-  <main>
+<header>
+  <div class="brand">EarthScape Climate Agency</div>
+  <nav>
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('explorer') }}">Data Explorer</a>
+    <a href="{{ url_for('predictions') }}">Predictions</a>
+    <a href="{{ url_for('alerts') }}">Alerts</a>
+    <a href="{{ url_for('correlation') }}">Correlation</a>
+    <a href="{{ url_for('upload') }}">Upload Data</a>
+    <a href="{{ url_for('feedback') }}">Feedback and Support</a>
+    <a href="{{ url_for('help_page') }}">Help and FAQ</a>
+    {% if session.get('role') == 'Administrator' %}
+    <a href="{{ url_for('admin') }}">Admin</a>
+    {% endif %}
+  </nav>
+  <div class="userbox">{{ session.get('name') }} ({{ session.get('role') }}) | <a href="{{ url_for('logout') }}">Logout</a></div>
+</header>
+<main>
   {% with messages = get_flashed_messages() %}{% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}{% endwith %}
   {% block content %}{% endblock %}
-  <footer class="foot">Data sources: Berkeley Earth Surface Temperature (Kaggle) · NOAA CO2 records · Copernicus ERA5 via Our World in Data<br>
-  EarthScape Climate Agency · Aptech eProject: Big Data, EarthScape Climate Agency</footer>
-  </main>
-</div>
+  <footer class="foot">Data sources: Berkeley Earth Surface Temperature (Kaggle), NOAA CO2 records, Copernicus ERA5 via Our World in Data.<br>
+  Developed by Taha Kazmi (Enrollment No. student1514118) as an Aptech eProject: Big Data - EarthScape Climate Agency.</footer>
+</main>
 {% else %}
 <main class="bare">
   {% block content_login %}{% endblock %}
 </main>
 {% endif %}
-<script>
-// Active nav highlight
-document.querySelectorAll('.sidebar nav a').forEach(function(a){
-  if (a.getAttribute('href') === window.location.pathname) a.classList.add('active');
-});
-// Cards and panels land in reading order, staggered (like a dashboard intro)
-var items = document.querySelectorAll('.card, .panel, .loginbox');
-items.forEach(function(el, i){
-  el.style.animationDelay = (i * 0.08) + 's';
-  el.classList.add('land');
-});
-// Animated counters
-document.querySelectorAll('[data-count]').forEach(function(el){
-  var target = parseFloat(el.getAttribute('data-count'));
-  var dec = parseInt(el.getAttribute('data-dec') || '0');
-  var dur = 1300, start = null;
-  function frame(ts){
-    if (!start) start = ts;
-    var p = Math.min((ts - start) / dur, 1);
-    var eased = 1 - Math.pow(2, -10 * p);
-    var val = target * eased;
-    el.textContent = dec > 0 ? val.toFixed(dec) : Math.round(val).toLocaleString('en-US');
-    if (p < 1) requestAnimationFrame(frame);
-    else el.textContent = dec > 0 ? target.toFixed(dec) : Math.round(target).toLocaleString('en-US');
-  }
-  requestAnimationFrame(frame);
-});
-// Chart defaults for the dark theme
-if (window.Chart) {
-  Chart.defaults.color = '#93a5b5';
-  Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
-  Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
-}
-</script>
 </body>
 </html>
