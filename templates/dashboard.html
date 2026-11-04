@@ -2,12 +2,12 @@
 {% block content %}
 <h1>Dashboard</h1>
 <div class="cards">
-  <div class="card"><div class="num" data-count="10064718">0</div><div class="lab">Total climate records sourced</div></div>
-  <div class="card"><div class="num" data-count="544811">0</div><div class="lab">Rows after cleaning (main file)</div></div>
-  <div class="card"><div class="num" data-count="242">0</div><div class="lab">Countries in the dataset</div></div>
-  <div class="card alert"><div class="num" data-count="41">0</div><div class="lab">Anomaly alerts (2001 to 2013)</div></div>
-  <div class="card"><div class="num" data-count="0.9655" data-dec="4">0</div><div class="lab">CO2 and temperature correlation</div></div>
-  <div class="card"><div class="num"><span data-count="22.07" data-dec="2">0</span> C</div><div class="lab">Pakistan forecast for 2050</div></div>
+  <div class="card"><div class="num">{{ stats.total_records }}</div><div class="lab">Total climate records sourced</div></div>
+  <div class="card"><div class="num">{{ stats.cleaned_rows }}</div><div class="lab">Rows after cleaning (main file)</div></div>
+  <div class="card"><div class="num">{{ stats.countries }}</div><div class="lab">Countries in the dataset</div></div>
+  <div class="card alert"><div class="num">{{ stats.anomalies }}</div><div class="lab">Anomaly alerts (2001 to 2013)</div></div>
+  <div class="card"><div class="num">{{ stats.correlation }}</div><div class="lab">CO2 and temperature correlation</div></div>
+  <div class="card"><div class="num">{{ stats.forecast_2050 }} C</div><div class="lab">Pakistan forecast for 2050</div></div>
 </div>
 
 <div class="panel">
@@ -48,16 +48,16 @@ const fcData = hist.map(() => null).concat(Object.values(fc));
 fcData[hist.length - 1] = hist[hist.length - 1][1];
 new Chart(document.getElementById('trendChart'), {type: 'line',
   data: {labels: labels, datasets: [
-    {label: 'Yearly average temperature', data: histData, borderColor: '#3ecf8e', pointRadius: 0, borderWidth: 1.5},
-    {label: 'Model forecast', data: fcData, borderColor: '#ffb454', pointRadius: 2, borderWidth: 2, borderDash: [5, 4]}
+    {label: 'Yearly average temperature', data: histData, borderColor: '#1F3864', pointRadius: 0, borderWidth: 1.5},
+    {label: 'Model forecast', data: fcData, borderColor: '#C00000', pointRadius: 2, borderWidth: 2, borderDash: [5, 4]}
   ]}, options: {scales: {x: {ticks: {maxTicksLimit: 12}}}}});
 const apy = {{ anom_per_year|tojson }};
 new Chart(document.getElementById('anomChart'), {type: 'bar',
-  data: {labels: Object.keys(apy), datasets: [{label: 'Anomalous months', data: Object.values(apy), backgroundColor: '#f0a13c'}]},
+  data: {labels: Object.keys(apy), datasets: [{label: 'Anomalous months', data: Object.values(apy), backgroundColor: '#C55A11'}]},
   options: {plugins: {legend: {display: false}}}});
 const recent = {{ recent.pakistan_yearly|tojson }};
 new Chart(document.getElementById('recentChart'), {type: 'bar',
-  data: {labels: Object.keys(recent), datasets: [{label: 'Pakistan yearly average temperature (C)', data: Object.values(recent), backgroundColor: '#3ecf8e'}]},
+  data: {labels: Object.keys(recent), datasets: [{label: 'Pakistan yearly average temperature (C)', data: Object.values(recent), backgroundColor: '#2E75B6'}]},
   options: {plugins: {legend: {display: false}}, scales: {y: {min: 19}}}});
 </script>
 {% endblock %}
