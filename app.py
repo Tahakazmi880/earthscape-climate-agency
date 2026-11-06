@@ -359,7 +359,7 @@ def api_weather():
         "condition": WEATHER_CODES.get(code, "Unknown"),
         "today_max": (day.get("temperature_2m_max") or [None])[0],
         "today_min": (day.get("temperature_2m_min") or [None])[0],
-        "source": "Open-Meteo live weather API",
+        "source": "Open-Meteo, a free weather service",
     })
 
 # ---------------- Weather by date and date range (Open-Meteo archive) ----------------
@@ -373,7 +373,7 @@ def geocode(city):
 
 def daily_series(place, start, end):
     """Day by day weather for a place between two dates (YYYY-MM-DD strings).
-    Past data comes from the Open-Meteo archive (ERA5). Very recent days that the
+    Past data comes from the Open-Meteo, a free weather service. Very recent days that the
     archive has not filled yet are taken from the forecast API instead."""
     import datetime as dt
     lat, lon = place["latitude"], place["longitude"]
@@ -451,7 +451,7 @@ def api_weather_day():
                     "date": day.isoformat(), "average_temperature": row.get("tmean"),
                     "max_temperature": row.get("tmax"), "min_temperature": row.get("tmin"),
                     "rainfall_mm": row.get("rain"), "max_wind_kmh": row.get("wind"),
-                    "source": "Open-Meteo archive (ERA5)"})
+                    "source": "Open-Meteo, a free weather service"})
 
 @app.route("/api/weather-range")
 @login_required
@@ -488,7 +488,7 @@ def api_weather_range():
                     "from": start.isoformat(), "to": end.isoformat(), "days": len(have),
                     "average_temperature": avg, "average_max": avg_max, "average_min": avg_min,
                     "total_rainfall_mm": total_rain, "daily": rows,
-                    "source": "Open-Meteo archive (ERA5)"})
+                    "source": "Open-Meteo, a free weather service"})
 
 # ---------------- Weather: 24 hours of a date, and 12 months of a year ----------------
 @app.route("/api/weather-hourly")
@@ -539,7 +539,7 @@ def api_weather_hourly():
     if not rows:
         return jsonify({"error": "Hourly data for this date is not available yet."}), 404
     return jsonify({"city": place.get("name"), "country": place.get("country", ""),
-                    "date": dstr, "hours": rows, "source": "Open-Meteo archive (ERA5)"})
+                    "date": dstr, "hours": rows, "source": "Open-Meteo, a free weather service"})
 
 @app.route("/api/weather-months")
 @login_required
@@ -572,7 +572,7 @@ def api_weather_months():
     if not any(m["days"] for m in months):
         return jsonify({"error": "No data is available for this year yet."}), 404
     return jsonify({"city": place.get("name"), "country": place.get("country", ""),
-                    "year": year, "months": months, "source": "Open-Meteo archive (ERA5)"})
+                    "year": year, "months": months, "source": "Open-Meteo, a free weather service"})
 
 # ---------------- Feedback and support ----------------
 FEEDBACK_FILE = os.path.join(BASE, "data", "feedback.json")
