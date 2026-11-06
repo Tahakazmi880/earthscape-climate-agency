@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Live Weather</h1>
+<div class="panel">
+  <p>Current weather for any city in the world, fetched live at the moment you search.
+  The data comes from the <b>Open-Meteo API</b>, a free weather service that needs no account or API key.
+  Type a city name and press the button:</p>
+  <label>City name</label>
+  <input type="text" id="wxCity" value="Karachi" style="max-width:260px">
+  <button type="button" id="wxBtn">Get live weather</button>
+  <div id="wxResult" class="statsline"></div>
+  <div id="wxTable"></div>
+</div>
+<script>
+document.getElementById('wxBtn').addEventListener('click', async () => {
+  const city = document.getElementById('wxCity').value;
+  const el = document.getElementById('wxResult');
+  const tb = document.getElementById('wxTable');
+  el.textContent = 'Fetching live weather...'; tb.innerHTML = '';
+  const r = await fetch('/api/weather?city=' + encodeURIComponent(city));
+  const d = await r.json();
+  if (d.error) { el.textContent = d.error; el.style.color = '#B45309'; return; }
+  el.style.color = '';
+  el.textContent = d.city + ', ' + d.country + '  (' + d.time + ', ' + d.timezone + ')';
+  tb.innerHTML = '<table>' +
+    '<tr><th>Condition</th><td>' + d.condition + '</td></tr>' +
+    '<tr><th>Temperature now</th><td>' + d.temperature + ' C</td></tr>' +
+    '<tr><th>Feels like</th><td>' + d.feels_like + ' C</td></tr>' +
+    '<tr><th>Humidity</th><td>' + d.humidity + ' %</td></tr>' +
+    '<tr><th>Wind speed</th><td>' + d.wind + ' km/h</td></tr>' +
+    '<tr><th>Pressure</th><td>' + d.pressure + ' hPa</td></tr>' +
+    '<tr><th>Today: highest / lowest</th><td>' + d.today_max + ' C / ' + d.today_min + ' C</td></tr>' +
+    '<tr><th>Source</th><td>' + d.source + '</td></tr></table>';
+});
+</script>
+{% endblock %}
