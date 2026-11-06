@@ -1,68 +1,94 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Live Weather and Weather History</h1>
+<h1>Weather: Today, Past Dates, and Averages</h1>
+<p>Write the name of any city of any country, then press a button. You can see the weather of
+<b>right now</b>, of <b>one old date</b>, or the <b>average of many days</b>. All data is free and
+comes from Open-Meteo, a weather service with records of many past years.</p>
+
 <div class="panel">
-  <p>Weather for <b>any city in any country of the world</b>, today, on a past date, or averaged over a
-  period. Data comes from the <b>Open-Meteo API</b>, a free service with weather records going back many
-  years, so old dates work as well as today.</p>
-  <label>City name (anywhere in the world)</label>
-  <input type="text" id="wxCity" value="Karachi" style="max-width:260px">
-  <label>Second city (only for the comparison, Option 4)</label>
-  <input type="text" id="wxCity2" value="Dubai" style="max-width:260px">
+  <label>Your city</label>
+  <input type="text" id="wxCity" value="Karachi" style="max-width:300px">
+  <p class="small">Examples: Karachi, Lahore, Dubai, London, New York.</p>
+</div>
 
-  <h2>Option 1: Current weather</h2>
-  <button type="button" id="wxNowBtn">Show current weather</button>
+<div class="panel">
+  <h2><span class="badge">1</span>Weather right now</h2>
+  <p>See the weather of your city at this moment.</p>
+  <button type="button" id="wxNowBtn">Show weather now</button>
+</div>
 
-  <h2>Option 2: One selected date, and its 24 hours</h2>
-  <label>Date</label>
+<div class="panel">
+  <h2><span class="badge">2</span>Weather on one day</h2>
+  <p>Pick any date, old or new. You will see that full day. You can also see all 24 hours of that day, one by one.</p>
+  <label>Pick a date</label>
   <input type="date" id="wxDate" style="max-width:220px">
-  <button type="button" id="wxDayBtn">Show that date</button>
-  <button type="button" id="wxHourBtn">Show 24 hours of that date</button>
+  <button type="button" id="wxDayBtn">Show this day</button>
+  <button type="button" id="wxHourBtn">Show 24 hours of this day</button>
+</div>
 
-  <h2>Option 3: Average and total for a period (with graph)</h2>
-  <label>From date</label>
+<div class="panel">
+  <h2><span class="badge">3</span>Average between two dates</h2>
+  <p>Pick a first date and a last date. You will get the average temperature and the total rain
+  of all those days, a graph, and a table of every day.</p>
+  <label>First date</label>
   <input type="date" id="wxFrom" style="max-width:220px">
-  <label>To date</label>
+  <label>Last date</label>
   <input type="date" id="wxTo" style="max-width:220px">
-  <button type="button" id="wxRangeBtn">Calculate average and total</button>
+  <button type="button" id="wxRangeBtn">Show average and total</button>
+</div>
 
-  <h2>Option 4: Compare two cities for the same period</h2>
-  <p>Uses the two city names above and the same From and To dates of Option 3.</p>
+<div class="panel">
+  <h2><span class="badge">4</span>Compare two cities</h2>
+  <p>Write a second city. Both cities are checked on the same dates of Box 3, and you can see
+  which city was hotter and how much rain each city got.</p>
+  <label>Second city</label>
+  <input type="text" id="wxCity2" value="Dubai" style="max-width:300px">
   <button type="button" id="wxCompareBtn">Compare the two cities</button>
+</div>
 
-  <h2>Option 5: All 12 months of a year</h2>
+<div class="panel">
+  <h2><span class="badge">5</span>One full year, month by month</h2>
+  <p>Write a year. You will see all 12 months of that year, one row for every month.</p>
   <label>Year</label>
   <input type="number" id="wxYear" value="2024" min="1950" max="2100" style="max-width:160px">
-  <button type="button" id="wxMonthsBtn">Show 12 months</button>
-
-  <div id="wxResult" class="statsline"></div>
-  <div id="wxTable"></div>
-  <div class="panel" id="wxChartPanel" style="display:none">
-    <canvas id="wxChart"></canvas>
-  </div>
-  <div id="wxCsv"></div>
+  <button type="button" id="wxMonthsBtn">Show the 12 months</button>
 </div>
+
+<div id="wxResult" class="statsline"></div>
+<div id="wxCards"></div>
+<div id="wxTable"></div>
+<div class="panel" id="wxChartPanel" style="display:none">
+  <canvas id="wxChart"></canvas>
+</div>
+<div id="wxCsv"></div>
+
 <script>
 const el = document.getElementById('wxResult');
+const cardsBox = document.getElementById('wxCards');
 const tb = document.getElementById('wxTable');
 const csvBox = document.getElementById('wxCsv');
 let chart = null;
 function cityVal() { return document.getElementById('wxCity').value; }
 function busy(msg) {
-  el.style.color = ''; el.textContent = msg; tb.innerHTML = ''; csvBox.innerHTML = '';
+  el.style.color = ''; el.textContent = msg;
+  cardsBox.innerHTML = ''; tb.innerHTML = ''; csvBox.innerHTML = '';
   document.getElementById('wxChartPanel').style.display = 'none';
   if (chart) { chart.destroy(); chart = null; }
 }
-function fail(msg) { el.textContent = msg; el.style.color = '#B45309'; tb.innerHTML = ''; csvBox.innerHTML = ''; }
+function fail(msg) { el.textContent = msg; el.style.color = '#B45309'; cardsBox.innerHTML = ''; tb.innerHTML = ''; csvBox.innerHTML = ''; }
+function statCards(items) {
+  cardsBox.innerHTML = '<div class="cards">' + items.map(x =>
+    '<div class="card' + (x[2] ? ' alert' : '') + '"><div class="num">' + x[1] + '</div><div class="lab">' + x[0] + '</div></div>'
+  ).join('') + '</div>';
+}
 function drawChart(labels, datasets) {
   document.getElementById('wxChartPanel').style.display = '';
   if (chart) chart.destroy();
-  chart = new Chart(document.getElementById('wxChart'), {type: 'line',
-    data: {labels: labels, datasets: datasets}});
+  chart = new Chart(document.getElementById('wxChart'), {type: 'line', data: {labels: labels, datasets: datasets}});
 }
 function csvButton(filename, header, rows) {
   const btn = document.createElement('button');
-  btn.type = 'button'; btn.textContent = 'Download this table as CSV';
+  btn.type = 'button'; btn.textContent = 'Download this table (CSV file)';
   btn.addEventListener('click', () => {
     const text = [header].concat(rows).map(r => r.join(',')).join('\n');
     const a = document.createElement('a');
@@ -73,49 +99,49 @@ function csvButton(filename, header, rows) {
 }
 
 document.getElementById('wxNowBtn').addEventListener('click', async () => {
-  busy('Fetching live weather...');
+  busy('Please wait, bringing the weather of now...');
   const r = await fetch('/api/weather?city=' + encodeURIComponent(cityVal()));
   const d = await r.json();
   if (d.error) { fail(d.error); return; }
-  el.textContent = d.city + ', ' + d.country + '  (' + d.time + ', ' + d.timezone + ')';
-  tb.innerHTML = '<table>' +
-    '<tr><th>Condition</th><td>' + d.condition + '</td></tr>' +
-    '<tr><th>Temperature now</th><td>' + d.temperature + ' C</td></tr>' +
-    '<tr><th>Feels like</th><td>' + d.feels_like + ' C</td></tr>' +
-    '<tr><th>Humidity</th><td>' + d.humidity + ' %</td></tr>' +
-    '<tr><th>Wind speed</th><td>' + d.wind + ' km/h</td></tr>' +
-    '<tr><th>Pressure</th><td>' + d.pressure + ' hPa</td></tr>' +
-    '<tr><th>Today: highest / lowest</th><td>' + d.today_max + ' C / ' + d.today_min + ' C</td></tr>' +
-    '<tr><th>Source</th><td>' + d.source + '</td></tr></table>';
+  el.textContent = d.city + ', ' + d.country + '  (time now: ' + d.time + ')';
+  statCards([
+    ['Temperature now', d.temperature + ' C'],
+    ['Sky', d.condition],
+    ['Feels like', d.feels_like + ' C'],
+    ['Water in the air (humidity)', d.humidity + ' %'],
+    ['Wind speed', d.wind + ' km/h'],
+    ['Air pressure', d.pressure + ' hPa'],
+    ['Today: hottest / coldest', d.today_max + ' C / ' + d.today_min + ' C']
+  ]);
 });
 
 document.getElementById('wxDayBtn').addEventListener('click', async () => {
   const date = document.getElementById('wxDate').value;
-  busy('Fetching weather for ' + date + '...');
+  busy('Please wait, bringing that day...');
   const r = await fetch('/api/weather-day?city=' + encodeURIComponent(cityVal()) + '&date=' + encodeURIComponent(date));
   const d = await r.json();
   if (d.error) { fail(d.error); return; }
   el.textContent = d.city + ', ' + d.country + '  on  ' + d.date;
-  tb.innerHTML = '<table>' +
-    '<tr><th>Average temperature</th><td>' + d.average_temperature + ' C</td></tr>' +
-    '<tr><th>Highest temperature</th><td>' + d.max_temperature + ' C</td></tr>' +
-    '<tr><th>Lowest temperature</th><td>' + d.min_temperature + ' C</td></tr>' +
-    '<tr><th>Rainfall that day</th><td>' + d.rainfall_mm + ' mm</td></tr>' +
-    '<tr><th>Strongest wind</th><td>' + d.max_wind_kmh + ' km/h</td></tr>' +
-    '<tr><th>Source</th><td>' + d.source + '</td></tr></table>';
+  statCards([
+    ['Average temperature', d.average_temperature + ' C'],
+    ['Hottest that day', d.max_temperature + ' C', true],
+    ['Coldest that day', d.min_temperature + ' C'],
+    ['Rain that day', d.rainfall_mm + ' mm'],
+    ['Strongest wind', d.max_wind_kmh + ' km/h']
+  ]);
 });
 
 document.getElementById('wxHourBtn').addEventListener('click', async () => {
   const date = document.getElementById('wxDate').value;
-  busy('Fetching 24 hours of ' + date + '...');
+  busy('Please wait, bringing all 24 hours...');
   const r = await fetch('/api/weather-hourly?city=' + encodeURIComponent(cityVal()) + '&date=' + encodeURIComponent(date));
   const d = await r.json();
   if (d.error) { fail(d.error); return; }
-  el.textContent = d.city + ', ' + d.country + '  hour by hour on  ' + d.date;
-  let h = '<table><tr><th>Hour</th><th>Temperature</th><th>Humidity</th></tr>';
+  el.textContent = d.city + ', ' + d.country + ', hour by hour on ' + d.date;
+  let h = '<table><tr><th>Hour</th><th>Temperature</th><th>Water in the air (humidity)</th></tr>';
   d.hours.forEach(row => {
     h += '<tr><td>' + row.hour + '</td><td>' + row.temperature + ' C</td><td>' +
-      (row.humidity === null || row.humidity === undefined ? 'n/a' : row.humidity + ' %') + '</td></tr>';
+      (row.humidity === null || row.humidity === undefined ? 'no data' : row.humidity + ' %') + '</td></tr>';
   });
   tb.innerHTML = h + '</table>';
   drawChart(d.hours.map(x => x.hour), [
@@ -134,76 +160,78 @@ async function fetchRange(city) {
 }
 
 document.getElementById('wxRangeBtn').addEventListener('click', async () => {
-  busy('Calculating average and total...');
+  busy('Please wait, counting the average and total...');
   const d = await fetchRange(cityVal());
   if (d.error) { fail(d.error); return; }
-  el.textContent = d.city + ', ' + d.country + '  from  ' + d.from + '  to  ' + d.to + '  (' + d.days + ' days)';
-  let h = '<table>' +
-    '<tr><th>Average temperature</th><td>' + d.average_temperature + ' C</td></tr>' +
-    '<tr><th>Average of daily highest</th><td>' + d.average_max + ' C</td></tr>' +
-    '<tr><th>Average of daily lowest</th><td>' + d.average_min + ' C</td></tr>' +
-    '<tr><th>Total rainfall</th><td>' + d.total_rainfall_mm + ' mm</td></tr>' +
-    '<tr><th>Source</th><td>' + d.source + '</td></tr></table>';
+  el.textContent = d.city + ', ' + d.country + ', from ' + d.from + ' to ' + d.to + ' (' + d.days + ' days)';
+  statCards([
+    ['Average temperature', d.average_temperature + ' C'],
+    ['Average of the hottest time of each day', d.average_max + ' C', true],
+    ['Average of the coldest time of each day', d.average_min + ' C'],
+    ['Total rain of all days', d.total_rainfall_mm + ' mm']
+  ]);
   let hot = null, cold = null;
   d.daily.forEach(row => {
     if (row.tmax !== null && (hot === null || row.tmax > hot.tmax)) hot = row;
     if (row.tmin !== null && (cold === null || row.tmin < cold.tmin)) cold = row;
   });
-  if (hot) h += '<p><b>Hottest day:</b> ' + hot.date + ' reached ' + hot.tmax + ' C. ' +
-    '<b>Coldest night:</b> ' + cold.date + ' fell to ' + cold.tmin + ' C.</p>';
-  h += '<h3>Day by day</h3><table><tr><th>Date</th><th>Average</th><th>Highest</th><th>Lowest</th><th>Rainfall</th></tr>';
+  let h = '';
+  if (hot) h += '<p><b>Hottest day:</b> ' + hot.date + ', it reached ' + hot.tmax + ' C. ' +
+    '<b>Coldest night:</b> ' + cold.date + ', it fell to ' + cold.tmin + ' C. ' +
+    'In the table below, the hottest day is red and the coldest night is blue.</p>';
+  h += '<h3>Every day, one by one</h3><table><tr><th>Date</th><th>Average</th><th>Hottest</th><th>Coldest</th><th>Rain</th></tr>';
   d.daily.forEach(row => {
-    const cls = (hot && row.date === hot.date) ? 'severe' : '';
-    const style = (cold && row.date === cold.date) ? ' style="background:#DBEAFE"' : '';
-    h += '<tr class="' + cls + '"' + style + '><td>' + row.date + '</td><td>' +
-      (row.tmean === null ? 'n/a' : row.tmean + ' C') + '</td><td>' +
-      (row.tmax === null ? 'n/a' : row.tmax + ' C') + '</td><td>' +
-      (row.tmin === null ? 'n/a' : row.tmin + ' C') + '</td><td>' +
-      (row.rain === null ? 'n/a' : row.rain + ' mm') + '</td></tr>';
+    const cls = (hot && row.date === hot.date) ? 'severe' : (cold && row.date === cold.date) ? 'cold' : '';
+    h += '<tr class="' + cls + '"><td>' + row.date + '</td><td>' +
+      (row.tmean === null ? 'no data' : row.tmean + ' C') + '</td><td>' +
+      (row.tmax === null ? 'no data' : row.tmax + ' C') + '</td><td>' +
+      (row.tmin === null ? 'no data' : row.tmin + ' C') + '</td><td>' +
+      (row.rain === null ? 'no data' : row.rain + ' mm') + '</td></tr>';
   });
   tb.innerHTML = h + '</table>';
   drawChart(d.daily.map(x => x.date), [
     {label: 'Average temperature (C)', data: d.daily.map(x => x.tmean), borderColor: '#1F3864', pointRadius: 2},
-    {label: 'Highest (C)', data: d.daily.map(x => x.tmax), borderColor: '#C00000', pointRadius: 0},
-    {label: 'Lowest (C)', data: d.daily.map(x => x.tmin), borderColor: '#2E7D32', pointRadius: 0}
+    {label: 'Hottest (C)', data: d.daily.map(x => x.tmax), borderColor: '#C00000', pointRadius: 0},
+    {label: 'Coldest (C)', data: d.daily.map(x => x.tmin), borderColor: '#2E7D32', pointRadius: 0}
   ]);
-  csvButton('weather_period.csv', ['Date', 'Average C', 'Highest C', 'Lowest C', 'Rainfall mm'],
+  csvButton('weather_days.csv', ['Date', 'Average C', 'Hottest C', 'Coldest C', 'Rain mm'],
     d.daily.map(x => [x.date, x.tmean, x.tmax, x.tmin, x.rain]));
 });
 
 document.getElementById('wxCompareBtn').addEventListener('click', async () => {
-  busy('Comparing the two cities...');
+  busy('Please wait, comparing the two cities...');
   const a = await fetchRange(cityVal());
   if (a.error) { fail(a.error); return; }
   const b = await fetchRange(document.getElementById('wxCity2').value);
   if (b.error) { fail(b.error); return; }
   const hotter = a.average_temperature >= b.average_temperature ? a : b;
   const diff = Math.abs(a.average_temperature - b.average_temperature).toFixed(2);
-  el.textContent = 'Comparison from ' + a.from + ' to ' + a.to;
-  tb.innerHTML = '<table><tr><th></th><th>' + a.city + '</th><th>' + b.city + '</th></tr>' +
-    '<tr><th>Average temperature</th><td>' + a.average_temperature + ' C</td><td>' + b.average_temperature + ' C</td></tr>' +
-    '<tr><th>Average of daily highest</th><td>' + a.average_max + ' C</td><td>' + b.average_max + ' C</td></tr>' +
-    '<tr><th>Average of daily lowest</th><td>' + a.average_min + ' C</td><td>' + b.average_min + ' C</td></tr>' +
-    '<tr><th>Total rainfall</th><td>' + a.total_rainfall_mm + ' mm</td><td>' + b.total_rainfall_mm + ' mm</td></tr></table>' +
-    '<p><b>' + hotter.city + '</b> was hotter in this period, by ' + diff + ' C on average.</p>';
+  el.textContent = a.city + ' and ' + b.city + ', from ' + a.from + ' to ' + a.to;
+  statCards([
+    [a.city + ': average temperature', a.average_temperature + ' C'],
+    [b.city + ': average temperature', b.average_temperature + ' C'],
+    [a.city + ': total rain', a.total_rainfall_mm + ' mm'],
+    [b.city + ': total rain', b.total_rainfall_mm + ' mm']
+  ]);
+  tb.innerHTML = '<p><b>' + hotter.city + '</b> was hotter in these days, by ' + diff + ' C on average.</p>';
   const bmap = {};
   b.daily.forEach(x => { bmap[x.date] = x; });
   drawChart(a.daily.map(x => x.date), [
     {label: a.city + ' average (C)', data: a.daily.map(x => x.tmean), borderColor: '#C00000', pointRadius: 2},
     {label: b.city + ' average (C)', data: a.daily.map(x => (bmap[x.date] ? bmap[x.date].tmean : null)), borderColor: '#1F3864', pointRadius: 2}
   ]);
-  csvButton('weather_compare.csv', ['Date', a.city + ' Average C', b.city + ' Average C', a.city + ' Rainfall mm', b.city + ' Rainfall mm'],
+  csvButton('weather_compare.csv', ['Date', a.city + ' Average C', b.city + ' Average C', a.city + ' Rain mm', b.city + ' Rain mm'],
     a.daily.map(x => [x.date, x.tmean, bmap[x.date] ? bmap[x.date].tmean : '', x.rain, bmap[x.date] ? bmap[x.date].rain : '']));
 });
 
 document.getElementById('wxMonthsBtn').addEventListener('click', async () => {
   const y = document.getElementById('wxYear').value;
-  busy('Fetching the 12 months of ' + y + '...');
+  busy('Please wait, bringing the 12 months...');
   const r = await fetch('/api/weather-months?city=' + encodeURIComponent(cityVal()) + '&year=' + encodeURIComponent(y));
   const d = await r.json();
   if (d.error) { fail(d.error); return; }
-  el.textContent = d.city + ', ' + d.country + '  in  ' + d.year;
-  let h = '<table><tr><th>Month</th><th>Days of data</th><th>Average temperature</th><th>Total rainfall</th></tr>';
+  el.textContent = d.city + ', ' + d.country + ' in the year ' + d.year;
+  let h = '<table><tr><th>Month</th><th>Days counted</th><th>Average temperature</th><th>Total rain</th></tr>';
   d.months.forEach(m => {
     h += '<tr><td>' + m.month + '</td><td>' + m.days + '</td><td>' +
       (m.average_temperature === null ? 'no data' : m.average_temperature + ' C') + '</td><td>' +
@@ -213,7 +241,7 @@ document.getElementById('wxMonthsBtn').addEventListener('click', async () => {
   drawChart(d.months.map(m => m.month), [
     {label: 'Average temperature (C)', data: d.months.map(m => m.average_temperature), borderColor: '#1F3864', pointRadius: 3}
   ]);
-  csvButton('weather_months.csv', ['Month', 'Days', 'Average Temperature C', 'Total Rainfall mm'],
+  csvButton('weather_months.csv', ['Month', 'Days', 'Average Temperature C', 'Total Rain mm'],
     d.months.map(m => [m.month, m.days, m.average_temperature, m.total_rainfall_mm]));
 });
 </script>
