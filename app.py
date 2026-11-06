@@ -12,7 +12,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-import csv, io, json, os, statistics, tempfile, uuid
+import csv, io, json, os, statistics, tempfile, urllib.parse, urllib.request, uuid
 
 app = Flask(__name__)
 app.secret_key = "earthscape-secret-key"
@@ -129,7 +129,7 @@ def api_country(name):
 @app.route("/predictions")
 @login_required
 def predictions():
-    return render_template("predictions.html", model=MODEL)
+    return render_template("predictions.html", model=MODEL, countries=sorted(YEARLY.keys()))
 
 # ---------------- Alerts (anomaly detection output) ----------------
 @app.route("/alerts")
@@ -138,13 +138,70 @@ def alerts():
     th = current_threshold()
     rows = [r for r in MONTHS_CHECKED if r[3] >= th]
     return render_template("alerts.html", alerts=rows, threshold=th,
-                           months_checked=len(MONTHS_CHECKED))
+                           months_checked=len(MONTHS_CHECKED),
+                           countries=sorted(YEARLY.keys()))
 
 # ---------------- Correlation ----------------
 @app.route("/correlation")
 @login_required
 def correlation():
     return render_template("correlation.html", co2=CO2)
+
+# ---------------- Country models (same Model 2 method, any country) ----------------
+def fit_country_model(name):
+    """Least squares trend line on a country's yearly averages from 1950 onward.
+    Pakistan returns the official Colab verified Model 2 so its numbers never change."""
+    if name == "Pakistan":
+        return {"slope": MODEL["slope"], "intercept": MODEL["intercept"],
+                "forecasts": MODEL["forecasts"], "official": True}
+    pts = [(y, t) for y, t in YEARLY.get(name, []) if y >= 1950]
+    if len(pts) < 10:
+        return None
+    n = len(pts)
+    sx = sum(y for y, _ in pts); sy = sum(t for _, t in pts)
+    sxx = sum(y * y for y, _ in pts); sxy = sum(y * t for y, t in pts)
+    slope = (n * sxy - sx * sy) / (n * sxx - sx * sx)
+    intercept = (sy - slope * sx) / n
+    fc = {str(y): round(slope * y + intercept, 2) for y in (2030, 2040, 2050)}
+    return {"slope": slope, "intercept": intercept, "forecasts": fc, "official": False,
+            "years_used": "%d to %d" % (pts[0][0], pts[-1][0])}
+
+@app.route("/api/country-model/<name>")
+@login_required
+def api_country_model(name):
+    m = fit_country_model(name)
+    if not m:
+        return jsonify({"error": "Not enough yearly data from 1950 onward for " + name + "."}), 404
+    return jsonify({"country": name, "forecasts": m["forecasts"], "official": m["official"],
+                    "years_used": m.get("years_used", "1950 to 2013"),
+                    "note": "Official Model 2 (verified in Colab)." if m["official"] else
+                            "Same Model 2 method (linear trend from 1950), calculated live from project data."})
+
+def yearly_anomalies(name, threshold):
+    """Years from 2001 onward whose yearly average is at least `threshold` C above
+    the country's own 1951 to 1980 yearly average. Computed live from project data."""
+    pts = dict(YEARLY.get(name, []))
+    base_vals = [t for y, t in pts.items() if 1951 <= y <= 1980]
+    if len(base_vals) < 10:
+        return None
+    base = sum(base_vals) / len(base_vals)
+    rows = []
+    for y in sorted(pts):
+        if y >= 2001:
+            diff = round(pts[y] - base, 2)
+            if diff >= threshold:
+                rows.append([str(y), pts[y], round(base, 2), diff])
+    return {"country": name, "baseline": round(base, 2), "rows": rows,
+            "years_checked": sum(1 for y in pts if y >= 2001)}
+
+@app.route("/api/yearly-alerts/<name>")
+@login_required
+def api_yearly_alerts(name):
+    res = yearly_anomalies(name, current_threshold())
+    if res is None:
+        return jsonify({"error": "Not enough 1951 to 1980 data for " + name + " to build a baseline."}), 404
+    res["threshold"] = current_threshold()
+    return jsonify(res)
 
 # ---------------- Live tool: prediction ----------------
 @app.route("/api/predict")
@@ -156,9 +213,14 @@ def api_predict():
         return jsonify({"error": "Please enter a valid year."}), 400
     if year < 2014 or year > 2100:
         return jsonify({"error": "Enter a future year between 2014 and 2100."}), 400
-    pred = MODEL["slope"] * year + MODEL["intercept"]
-    return jsonify({"year": year, "prediction": round(pred, 2),
-                    "note": "Model 2: Linear Regression trained on Pakistan data, 1950 to 2000."})
+    country = request.args.get("country", "Pakistan")
+    m = fit_country_model(country)
+    if not m:
+        return jsonify({"error": "Not enough yearly data from 1950 onward for " + country + "."}), 404
+    pred = m["slope"] * year + m["intercept"]
+    note = ("Model 2: Linear Regression trained on Pakistan data, 1950 to 2000." if country == "Pakistan"
+            else "Linear trend fitted live on " + country + " yearly data from 1950 (same method as Model 2).")
+    return jsonify({"year": year, "country": country, "prediction": round(pred, 2), "note": note})
 
 # ---------------- Live tool: anomaly checker ----------------
 @app.route("/api/anomaly-check")
@@ -245,6 +307,60 @@ def api_upload_series():
         per_year.setdefault(year, []).append(val)
     series = [[y, round(statistics.mean(v), 2)] for y, v in sorted(per_year.items())]
     return jsonify({"country": country or "All data", "points": series, "years": len(series)})
+
+# ---------------- Live weather (Open-Meteo API, no key needed) ----------------
+WEATHER_CODES = {
+    0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+    45: "Fog", 48: "Fog with frost", 51: "Light drizzle", 53: "Drizzle", 55: "Dense drizzle",
+    61: "Slight rain", 63: "Rain", 65: "Heavy rain", 66: "Freezing rain", 67: "Heavy freezing rain",
+    71: "Slight snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains",
+    80: "Slight rain showers", 81: "Rain showers", 82: "Violent rain showers",
+    85: "Snow showers", 86: "Heavy snow showers",
+    95: "Thunderstorm", 96: "Thunderstorm with hail", 99: "Thunderstorm with heavy hail",
+}
+
+def fetch_json(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "EarthScapeClimateAgency/1.0"})
+    with urllib.request.urlopen(req, timeout=6) as r:
+        return json.load(r)
+
+@app.route("/weather")
+@login_required
+def weather_page():
+    return render_template("weather.html")
+
+@app.route("/api/weather")
+@login_required
+def api_weather():
+    city = request.args.get("city", "").strip()
+    if not city:
+        return jsonify({"error": "Please type a city name."}), 400
+    try:
+        geo = fetch_json("https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json&name="
+                         + urllib.parse.quote(city))
+        results = geo.get("results") or []
+        if not results:
+            return jsonify({"error": "City not found. Please check the spelling."}), 404
+        place = results[0]
+        w = fetch_json("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s"
+                       "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,surface_pressure"
+                       "&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&timezone=auto"
+                       % (place["latitude"], place["longitude"]))
+    except Exception:
+        return jsonify({"error": "The live weather service did not respond. Please try again in a moment."}), 502
+    cur, day = w.get("current", {}), w.get("daily", {})
+    code = cur.get("weather_code")
+    return jsonify({
+        "city": place.get("name"), "country": place.get("country", ""),
+        "time": cur.get("time", ""), "timezone": w.get("timezone", ""),
+        "temperature": cur.get("temperature_2m"), "feels_like": cur.get("apparent_temperature"),
+        "humidity": cur.get("relative_humidity_2m"), "wind": cur.get("wind_speed_10m"),
+        "pressure": cur.get("surface_pressure"),
+        "condition": WEATHER_CODES.get(code, "Unknown"),
+        "today_max": (day.get("temperature_2m_max") or [None])[0],
+        "today_min": (day.get("temperature_2m_min") or [None])[0],
+        "source": "Open-Meteo live weather API",
+    })
 
 # ---------------- Feedback and support ----------------
 FEEDBACK_FILE = os.path.join(BASE, "data", "feedback.json")
