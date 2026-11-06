@@ -362,6 +362,134 @@ def api_weather():
         "source": "Open-Meteo live weather API",
     })
 
+# ---------------- Weather by date and date range (Open-Meteo archive) ----------------
+DAILY_VARS = "temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,wind_speed_10m_max"
+
+def geocode(city):
+    geo = fetch_json("https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json&name="
+                     + urllib.parse.quote(city))
+    results = geo.get("results") or []
+    return results[0] if results else None
+
+def daily_series(place, start, end):
+    """Day by day weather for a place between two dates (YYYY-MM-DD strings).
+    Past data comes from the Open-Meteo archive (ERA5). Very recent days that the
+    archive has not filled yet are taken from the forecast API instead."""
+    import datetime as dt
+    lat, lon = place["latitude"], place["longitude"]
+    days = {}
+
+    def absorb(payload):
+        d = (payload or {}).get("daily") or {}
+        times = d.get("time") or []
+        for i, day in enumerate(times):
+            row = days.setdefault(day, {})
+            for key, field in (("tmax", "temperature_2m_max"), ("tmin", "temperature_2m_min"),
+                               ("tmean", "temperature_2m_mean"), ("rain", "precipitation_sum"),
+                               ("wind", "wind_speed_10m_max")):
+                vals = d.get(field) or []
+                if i < len(vals) and vals[i] is not None and row.get(key) is None:
+                    row[key] = vals[i]
+
+    try:
+        absorb(fetch_json("https://archive-api.open-meteo.com/v1/archive?latitude=%s&longitude=%s"
+                          "&start_date=%s&end_date=%s&daily=%s&timezone=auto"
+                          % (lat, lon, start, end, DAILY_VARS)))
+    except Exception:
+        pass
+    today = dt.date.today()
+    if dt.date.fromisoformat(end) >= today - dt.timedelta(days=10):
+        try:
+            absorb(fetch_json("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s"
+                              "&start_date=%s&end_date=%s&daily=%s&timezone=auto"
+                              % (lat, lon, start, end, DAILY_VARS)))
+        except Exception:
+            pass
+    out = []
+    cur = dt.date.fromisoformat(start)
+    last = dt.date.fromisoformat(end)
+    while cur <= last:
+        key = cur.isoformat()
+        row = days.get(key) or {}
+        if row.get("tmean") is None and row.get("tmax") is not None and row.get("tmin") is not None:
+            row["tmean"] = round((row["tmax"] + row["tmin"]) / 2, 2)
+        out.append({"date": key, "tmean": row.get("tmean"), "tmax": row.get("tmax"),
+                    "tmin": row.get("tmin"), "rain": row.get("rain"), "wind": row.get("wind")})
+        cur += dt.timedelta(days=1)
+    return out
+
+def parse_date(value):
+    import datetime as dt
+    try:
+        return dt.date.fromisoformat(value or "")
+    except ValueError:
+        return None
+
+@app.route("/api/weather-day")
+@login_required
+def api_weather_day():
+    import datetime as dt
+    city = request.args.get("city", "").strip()
+    day = parse_date(request.args.get("date", ""))
+    if not city:
+        return jsonify({"error": "Please type a city name."}), 400
+    if day is None:
+        return jsonify({"error": "Please select a date."}), 400
+    if day > dt.date.today() + dt.timedelta(days=16):
+        return jsonify({"error": "That date is too far in the future. Weather data is available up to about 16 days ahead."}), 400
+    try:
+        place = geocode(city)
+        if not place:
+            return jsonify({"error": "City not found. Please check the spelling."}), 404
+        rows = daily_series(place, day.isoformat(), day.isoformat())
+    except Exception:
+        return jsonify({"error": "The weather service did not respond. Please try again in a moment."}), 502
+    row = rows[0] if rows else {}
+    if row.get("tmean") is None and row.get("tmax") is None:
+        return jsonify({"error": "Data for this date is not available yet. Very recent days can take a few days to appear in the archive."}), 404
+    return jsonify({"city": place.get("name"), "country": place.get("country", ""),
+                    "date": day.isoformat(), "average_temperature": row.get("tmean"),
+                    "max_temperature": row.get("tmax"), "min_temperature": row.get("tmin"),
+                    "rainfall_mm": row.get("rain"), "max_wind_kmh": row.get("wind"),
+                    "source": "Open-Meteo archive (ERA5)"})
+
+@app.route("/api/weather-range")
+@login_required
+def api_weather_range():
+    import datetime as dt
+    city = request.args.get("city", "").strip()
+    start = parse_date(request.args.get("from", ""))
+    end = parse_date(request.args.get("to", ""))
+    if not city:
+        return jsonify({"error": "Please type a city name."}), 400
+    if start is None or end is None:
+        return jsonify({"error": "Please select both dates."}), 400
+    if end < start:
+        return jsonify({"error": "The second date must be after the first date."}), 400
+    if (end - start).days > 366:
+        return jsonify({"error": "Please select a period of one year or less."}), 400
+    if end > dt.date.today() + dt.timedelta(days=16):
+        return jsonify({"error": "The end date is too far in the future. Weather data is available up to about 16 days ahead."}), 400
+    try:
+        place = geocode(city)
+        if not place:
+            return jsonify({"error": "City not found. Please check the spelling."}), 404
+        rows = daily_series(place, start.isoformat(), end.isoformat())
+    except Exception:
+        return jsonify({"error": "The weather service did not respond. Please try again in a moment."}), 502
+    have = [r for r in rows if r.get("tmean") is not None]
+    if not have:
+        return jsonify({"error": "No data is available for this period yet."}), 404
+    avg = round(sum(r["tmean"] for r in have) / len(have), 2)
+    avg_max = round(sum(r["tmax"] for r in have if r["tmax"] is not None) / max(1, sum(1 for r in have if r["tmax"] is not None)), 2)
+    avg_min = round(sum(r["tmin"] for r in have if r["tmin"] is not None) / max(1, sum(1 for r in have if r["tmin"] is not None)), 2)
+    total_rain = round(sum(r["rain"] for r in rows if r.get("rain") is not None), 1)
+    return jsonify({"city": place.get("name"), "country": place.get("country", ""),
+                    "from": start.isoformat(), "to": end.isoformat(), "days": len(have),
+                    "average_temperature": avg, "average_max": avg_max, "average_min": avg_min,
+                    "total_rainfall_mm": total_rain, "daily": rows,
+                    "source": "Open-Meteo archive (ERA5)"})
+
 # ---------------- Feedback and support ----------------
 FEEDBACK_FILE = os.path.join(BASE, "data", "feedback.json")
 
