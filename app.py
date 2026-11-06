@@ -490,6 +490,90 @@ def api_weather_range():
                     "total_rainfall_mm": total_rain, "daily": rows,
                     "source": "Open-Meteo archive (ERA5)"})
 
+# ---------------- Weather: 24 hours of a date, and 12 months of a year ----------------
+@app.route("/api/weather-hourly")
+@login_required
+def api_weather_hourly():
+    import datetime as dt
+    city = request.args.get("city", "").strip()
+    day = parse_date(request.args.get("date", ""))
+    if not city:
+        return jsonify({"error": "Please type a city name."}), 400
+    if day is None:
+        return jsonify({"error": "Please select a date."}), 400
+    if day > dt.date.today() + dt.timedelta(days=16):
+        return jsonify({"error": "That date is too far in the future."}), 400
+    try:
+        place = geocode(city)
+        if not place:
+            return jsonify({"error": "City not found. Please check the spelling."}), 404
+        lat, lon = place["latitude"], place["longitude"]
+        hours = {}
+        def absorb_h(payload):
+            h = (payload or {}).get("hourly") or {}
+            times = h.get("time") or []
+            for i, tstamp in enumerate(times):
+                row = hours.setdefault(tstamp, {})
+                for key, field in (("temp", "temperature_2m"), ("humidity", "relative_humidity_2m")):
+                    vals = h.get(field) or []
+                    if i < len(vals) and vals[i] is not None and row.get(key) is None:
+                        row[key] = vals[i]
+        dstr = day.isoformat()
+        try:
+            absorb_h(fetch_json("https://archive-api.open-meteo.com/v1/archive?latitude=%s&longitude=%s"
+                                "&start_date=%s&end_date=%s&hourly=temperature_2m,relative_humidity_2m&timezone=auto"
+                                % (lat, lon, dstr, dstr)))
+        except Exception:
+            pass
+        if day >= dt.date.today() - dt.timedelta(days=10):
+            try:
+                absorb_h(fetch_json("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s"
+                                    "&start_date=%s&end_date=%s&hourly=temperature_2m,relative_humidity_2m&timezone=auto"
+                                    % (lat, lon, dstr, dstr)))
+            except Exception:
+                pass
+    except Exception:
+        return jsonify({"error": "The weather service did not respond. Please try again in a moment."}), 502
+    rows = [{"time": t, "hour": t[11:16], "temperature": v.get("temp"), "humidity": v.get("humidity")}
+            for t, v in sorted(hours.items()) if v.get("temp") is not None]
+    if not rows:
+        return jsonify({"error": "Hourly data for this date is not available yet."}), 404
+    return jsonify({"city": place.get("name"), "country": place.get("country", ""),
+                    "date": dstr, "hours": rows, "source": "Open-Meteo archive (ERA5)"})
+
+@app.route("/api/weather-months")
+@login_required
+def api_weather_months():
+    import datetime as dt
+    city = request.args.get("city", "").strip()
+    try:
+        year = int(request.args.get("year", ""))
+    except ValueError:
+        return jsonify({"error": "Please enter a year, for example 2024."}), 400
+    if year < 1950 or year > dt.date.today().year:
+        return jsonify({"error": "Please enter a year between 1950 and %d." % dt.date.today().year}), 400
+    try:
+        place = geocode(city)
+        if not place:
+            return jsonify({"error": "City not found. Please check the spelling."}), 404
+        rows = daily_series(place, "%d-01-01" % year, "%d-12-31" % year)
+    except Exception:
+        return jsonify({"error": "The weather service did not respond. Please try again in a moment."}), 502
+    months = []
+    for mth in range(1, 13):
+        part = [r for r in rows if int(r["date"][5:7]) == mth and r.get("tmean") is not None]
+        if part:
+            months.append({"month": MONTH_NAMES[mth - 1], "days": len(part),
+                           "average_temperature": round(sum(r["tmean"] for r in part) / len(part), 2),
+                           "total_rainfall_mm": round(sum(r["rain"] for r in part if r.get("rain") is not None), 1)})
+        else:
+            months.append({"month": MONTH_NAMES[mth - 1], "days": 0,
+                           "average_temperature": None, "total_rainfall_mm": None})
+    if not any(m["days"] for m in months):
+        return jsonify({"error": "No data is available for this year yet."}), 404
+    return jsonify({"city": place.get("name"), "country": place.get("country", ""),
+                    "year": year, "months": months, "source": "Open-Meteo archive (ERA5)"})
+
 # ---------------- Feedback and support ----------------
 FEEDBACK_FILE = os.path.join(BASE, "data", "feedback.json")
 
