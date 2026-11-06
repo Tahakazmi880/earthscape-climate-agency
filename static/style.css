@@ -40,5 +40,8 @@ button:hover { background: #2b4f86; }
 .loginbox button { width: 100%; }
 .loginbox .hint { color: #777; font-size: 12.5px; margin-top: 14px; text-align: center; }
 .statsline { margin-top: 12px; font-size: 15px; font-weight: bold; }
+.badge { display: inline-block; background: #1F3864; color: #fff; border-radius: 50%; width: 25px; height: 25px; line-height: 25px; text-align: center; font-size: 14px; margin-right: 7px; }
+tr.cold td { background: #dbeafe; }
+.small { color: #555; font-size: 13px; }
 .foot { color: #666; font-size: 12.5px; line-height: 1.6; border-top: 1px solid #c9d3df; padding-top: 12px; margin-top: 4px; }
 @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
