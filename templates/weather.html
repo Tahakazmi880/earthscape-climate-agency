@@ -1,26 +1,43 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Live Weather</h1>
+<h1>Live Weather and Weather History</h1>
 <div class="panel">
-  <p>Current weather for any city in the world, fetched live at the moment you search.
-  The data comes from the <b>Open-Meteo API</b>, a free weather service that needs no account or API key.
-  Type a city name and press the button:</p>
-  <label>City name</label>
+  <p>Weather for <b>any city in any country of the world</b>. First type the city name, then choose
+  one of the three options below. Data comes from the <b>Open-Meteo API</b>, a free service with
+  weather records going back many years, so old dates work as well as today.</p>
+  <label>City name (anywhere in the world)</label>
   <input type="text" id="wxCity" value="Karachi" style="max-width:260px">
-  <button type="button" id="wxBtn">Get live weather</button>
+
+  <h2>Option 1: Current weather</h2>
+  <button type="button" id="wxNowBtn">Show current weather</button>
+
+  <h2>Option 2: One selected date</h2>
+  <label>Date</label>
+  <input type="date" id="wxDate" style="max-width:220px">
+  <button type="button" id="wxDayBtn">Show that date</button>
+
+  <h2>Option 3: Average and total for a period</h2>
+  <label>From date</label>
+  <input type="date" id="wxFrom" style="max-width:220px">
+  <label>To date</label>
+  <input type="date" id="wxTo" style="max-width:220px">
+  <button type="button" id="wxRangeBtn">Calculate average and total</button>
+
   <div id="wxResult" class="statsline"></div>
   <div id="wxTable"></div>
 </div>
 <script>
-document.getElementById('wxBtn').addEventListener('click', async () => {
-  const city = document.getElementById('wxCity').value;
-  const el = document.getElementById('wxResult');
-  const tb = document.getElementById('wxTable');
-  el.textContent = 'Fetching live weather...'; tb.innerHTML = '';
-  const r = await fetch('/api/weather?city=' + encodeURIComponent(city));
+const el = document.getElementById('wxResult');
+const tb = document.getElementById('wxTable');
+function cityVal() { return document.getElementById('wxCity').value; }
+function busy(msg) { el.style.color = ''; el.textContent = msg; tb.innerHTML = ''; }
+function fail(msg) { el.textContent = msg; el.style.color = '#B45309'; tb.innerHTML = ''; }
+
+document.getElementById('wxNowBtn').addEventListener('click', async () => {
+  busy('Fetching live weather...');
+  const r = await fetch('/api/weather?city=' + encodeURIComponent(cityVal()));
   const d = await r.json();
-  if (d.error) { el.textContent = d.error; el.style.color = '#B45309'; return; }
-  el.style.color = '';
+  if (d.error) { fail(d.error); return; }
   el.textContent = d.city + ', ' + d.country + '  (' + d.time + ', ' + d.timezone + ')';
   tb.innerHTML = '<table>' +
     '<tr><th>Condition</th><td>' + d.condition + '</td></tr>' +
@@ -31,6 +48,48 @@ document.getElementById('wxBtn').addEventListener('click', async () => {
     '<tr><th>Pressure</th><td>' + d.pressure + ' hPa</td></tr>' +
     '<tr><th>Today: highest / lowest</th><td>' + d.today_max + ' C / ' + d.today_min + ' C</td></tr>' +
     '<tr><th>Source</th><td>' + d.source + '</td></tr></table>';
+});
+
+document.getElementById('wxDayBtn').addEventListener('click', async () => {
+  const date = document.getElementById('wxDate').value;
+  busy('Fetching weather for ' + date + '...');
+  const r = await fetch('/api/weather-day?city=' + encodeURIComponent(cityVal()) + '&date=' + encodeURIComponent(date));
+  const d = await r.json();
+  if (d.error) { fail(d.error); return; }
+  el.textContent = d.city + ', ' + d.country + '  on  ' + d.date;
+  tb.innerHTML = '<table>' +
+    '<tr><th>Average temperature</th><td>' + d.average_temperature + ' C</td></tr>' +
+    '<tr><th>Highest temperature</th><td>' + d.max_temperature + ' C</td></tr>' +
+    '<tr><th>Lowest temperature</th><td>' + d.min_temperature + ' C</td></tr>' +
+    '<tr><th>Rainfall that day</th><td>' + d.rainfall_mm + ' mm</td></tr>' +
+    '<tr><th>Strongest wind</th><td>' + d.max_wind_kmh + ' km/h</td></tr>' +
+    '<tr><th>Source</th><td>' + d.source + '</td></tr></table>';
+});
+
+document.getElementById('wxRangeBtn').addEventListener('click', async () => {
+  const f = document.getElementById('wxFrom').value;
+  const t = document.getElementById('wxTo').value;
+  busy('Calculating average and total...');
+  const r = await fetch('/api/weather-range?city=' + encodeURIComponent(cityVal()) +
+    '&from=' + encodeURIComponent(f) + '&to=' + encodeURIComponent(t));
+  const d = await r.json();
+  if (d.error) { fail(d.error); return; }
+  el.textContent = d.city + ', ' + d.country + '  from  ' + d.from + '  to  ' + d.to + '  (' + d.days + ' days)';
+  let h = '<table>' +
+    '<tr><th>Average temperature</th><td>' + d.average_temperature + ' C</td></tr>' +
+    '<tr><th>Average of daily highest</th><td>' + d.average_max + ' C</td></tr>' +
+    '<tr><th>Average of daily lowest</th><td>' + d.average_min + ' C</td></tr>' +
+    '<tr><th>Total rainfall</th><td>' + d.total_rainfall_mm + ' mm</td></tr>' +
+    '<tr><th>Source</th><td>' + d.source + '</td></tr></table>';
+  h += '<h3>Day by day</h3><table><tr><th>Date</th><th>Average</th><th>Highest</th><th>Lowest</th><th>Rainfall</th></tr>';
+  d.daily.forEach(row => {
+    h += '<tr><td>' + row.date + '</td><td>' + (row.tmean === null ? 'n/a' : row.tmean + ' C') +
+      '</td><td>' + (row.tmax === null ? 'n/a' : row.tmax + ' C') + '</td><td>' +
+      (row.tmin === null ? 'n/a' : row.tmin + ' C') + '</td><td>' +
+      (row.rain === null ? 'n/a' : row.rain + ' mm') + '</td></tr>';
+  });
+  h += '</table>';
+  tb.innerHTML = h;
 });
 </script>
 {% endblock %}
