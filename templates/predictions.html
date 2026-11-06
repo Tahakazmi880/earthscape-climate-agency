@@ -16,19 +16,44 @@
 
 <div class="panel">
   <h2>Live Prediction Tool</h2>
-  <p>Enter any future year and the trained model calculates its prediction on the spot:</p>
+  <p>Select a country or region, enter any future year, and the model calculates its prediction on the spot.
+  Pakistan uses the official Model 2 above. For every other country the same method (a linear trend fitted
+  on yearly data from 1950) is calculated live from the project dataset:</p>
+  <label>Country / Region</label>
+  <select id="predCountry" style="max-width:260px">
+    {% for c in countries %}
+    <option value="{{ c }}" {% if c == 'Pakistan' %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
   <label>Year (2014 to 2100)</label>
   <input type="number" id="predYear" value="2035" min="2014" max="2100" style="max-width:200px">
   <button type="button" id="predBtn">Predict</button>
   <div id="predResult" class="statsline"></div>
+  <div id="countryFc"></div>
 </div>
 <script>
+async function loadCountryForecasts() {
+  const c = document.getElementById('predCountry').value;
+  const box = document.getElementById('countryFc');
+  const r = await fetch('/api/country-model/' + encodeURIComponent(c));
+  const d = await r.json();
+  if (d.error) { box.innerHTML = '<p>' + d.error + '</p>'; return; }
+  box.innerHTML = '<h3>Future predictions for ' + d.country + '</h3>' +
+    '<table><tr><th>Year</th><th>Predicted average temperature</th></tr>' +
+    '<tr><td>2030</td><td>' + d.forecasts['2030'] + ' C</td></tr>' +
+    '<tr><td>2040</td><td>' + d.forecasts['2040'] + ' C</td></tr>' +
+    '<tr><td>2050</td><td>' + d.forecasts['2050'] + ' C</td></tr></table>' +
+    '<p>Data years used: ' + d.years_used + '. ' + d.note + '</p>';
+}
+document.getElementById('predCountry').addEventListener('change', loadCountryForecasts);
+loadCountryForecasts();
 document.getElementById('predBtn').addEventListener('click', async () => {
   const y = document.getElementById('predYear').value;
-  const r = await fetch('/api/predict?year=' + encodeURIComponent(y));
+  const c = document.getElementById('predCountry').value;
+  const r = await fetch('/api/predict?year=' + encodeURIComponent(y) + '&country=' + encodeURIComponent(c));
   const d = await r.json();
   document.getElementById('predResult').textContent = d.error ? d.error :
-    'Predicted average temperature of Pakistan in ' + d.year + ': ' + d.prediction + ' C  (' + d.note + ')';
+    'Predicted average temperature of ' + d.country + ' in ' + d.year + ': ' + d.prediction + ' C  (' + d.note + ')';
 });
 </script>
 <div class="grid2">
