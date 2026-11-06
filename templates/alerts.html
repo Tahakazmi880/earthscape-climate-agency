@@ -5,7 +5,46 @@
   <p>An alert is raised when a month's average temperature is <b>{{ threshold }} C or more above its normal
   (baseline) temperature</b>, where the baseline is the 1951 to 1980 average of the same month for Pakistan.
   Between 2001 and 2013, {{ months_checked }} months were checked and <b>{{ alerts|length }} alerts</b> were generated.</p>
-  <h2>Live Anomaly Checker</h2>
+  <label>Country / Region</label>
+  <select id="alertCountry" style="max-width:260px">
+    {% for c in countries %}
+    <option value="{{ c }}" {% if c == 'Pakistan' %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <p id="alertNote">Pakistan is the project country, so its alerts below are month by month. Select any other
+  country or region and its hot years are calculated live from the project dataset, using that country's own
+  1951 to 1980 average as its normal.</p>
+  <div id="countryAlerts"></div>
+  <script>
+  document.getElementById('alertCountry').addEventListener('change', async (e) => {
+    const c = e.target.value;
+    const box = document.getElementById('countryAlerts');
+    const pak = document.getElementById('pakTable');
+    if (c === 'Pakistan') { box.innerHTML = ''; pak.style.display = ''; return; }
+    box.innerHTML = '<p>Calculating alerts for ' + c + '...</p>';
+    const r = await fetch('/api/yearly-alerts/' + encodeURIComponent(c));
+    const d = await r.json();
+    if (d.error) { box.innerHTML = '<p>' + d.error + '</p>'; pak.style.display = ''; return; }
+    pak.style.display = 'none';
+    let h = '<h3>Alerts for ' + d.country + ' (yearly)</h3>' +
+      '<p>Normal (1951 to 1980 average): ' + d.baseline + ' C. Years checked from 2001: ' + d.years_checked +
+      '. Alerts found: <b>' + d.rows.length + '</b> (a year alerts when it is ' + d.threshold + ' C or more above normal).</p>';
+    if (d.rows.length) {
+      h += '<table><tr><th>#</th><th>Year</th><th>Actual temperature</th><th>Baseline (normal)</th><th>Above normal</th><th>Level</th></tr>';
+      d.rows.forEach((row, i) => {
+        const lvl = row[3] >= 3 ? 'Severe' : row[3] >= 2 ? 'High' : 'Moderate';
+        const cls = row[3] >= 3 ? 'severe' : row[3] >= 2 ? 'high' : '';
+        h += '<tr class="' + cls + '"><td>' + (i + 1) + '</td><td>' + row[0] + '</td><td>' + row[1] +
+             ' C</td><td>' + row[2] + ' C</td><td>+' + row[3] + ' C</td><td>' + lvl + '</td></tr>';
+      });
+      h += '</table>';
+    } else {
+      h += '<p>No year crossed the alert limit for ' + d.country + '.</p>';
+    }
+    box.innerHTML = h;
+  });
+  </script>
+  <h2>Live Anomaly Checker (Pakistan baseline)</h2>
   <p>Check any month yourself: enter its average temperature and the system compares it with the
   1951 to 1980 baseline right now and tells you whether an alert would be raised.</p>
   <label>Month</label>
@@ -34,6 +73,7 @@
   });
   </script>
 
+  <div id="pakTable">
   <table>
     <tr><th>#</th><th>Month</th><th>Actual temperature</th><th>Baseline (normal)</th><th>Above normal</th><th>Level</th></tr>
     {% for d, a, b, x in alerts %}
@@ -43,5 +83,6 @@
     </tr>
     {% endfor %}
   </table>
+  </div>
 </div>
 {% endblock %}
