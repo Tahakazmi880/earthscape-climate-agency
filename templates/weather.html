@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Weather: Today, Past Dates, and Averages</h1>
-<p>Write the name of any city of any country, then press a button. You can see the weather of
-<b>right now</b>, of <b>one old date</b>, or the <b>average of many days</b>. All data is free and
-comes from Open-Meteo, a weather service with records of many past years.</p>
+<h1>Weather of Any City in the World</h1>
+<p>This page answers <b>5 simple questions</b>. Write your city name, pick a box below, and press its button.
+Every box has an <b>example</b> so you can see what will happen before you press anything.
+The dates are already filled with a working example, so you can also just press a button and watch.</p>
 
 <div class="panel">
   <label>Your city</label>
@@ -12,43 +12,51 @@ comes from Open-Meteo, a weather service with records of many past years.</p>
 </div>
 
 <div class="panel">
-  <h2><span class="badge">1</span>Weather right now</h2>
-  <p>See the weather of your city at this moment.</p>
+  <h2><span class="badge">1</span>How is the weather right now?</h2>
+  <p class="small">Example: city is Karachi. Press the button and you see the temperature of this
+  minute, the sky, the wind, and the water in the air.</p>
   <button type="button" id="wxNowBtn">Show weather now</button>
 </div>
 
 <div class="panel">
-  <h2><span class="badge">2</span>Weather on one day</h2>
-  <p>Pick any date, old or new. You will see that full day. You can also see all 24 hours of that day, one by one.</p>
+  <h2><span class="badge">2</span>How was the weather on one day?</h2>
+  <p class="small">Example: the date below is 15 June 2024. Press "Show this day" and you see that
+  full day: how hot, how cold, how much rain. Press "Show 24 hours" and you see that same day
+  hour by hour, from midnight to midnight.</p>
   <label>Pick a date</label>
-  <input type="date" id="wxDate" style="max-width:220px">
+  <input type="date" id="wxDate" value="2024-06-15" style="max-width:220px">
   <button type="button" id="wxDayBtn">Show this day</button>
   <button type="button" id="wxHourBtn">Show 24 hours of this day</button>
 </div>
 
 <div class="panel">
-  <h2><span class="badge">3</span>Average between two dates</h2>
-  <p>Pick a first date and a last date. You will get the average temperature and the total rain
-  of all those days, a graph, and a table of every day.</p>
+  <h2><span class="badge">3</span>How were many days together?</h2>
+  <p class="small">Example: the dates below are 1 June 2024 to 30 June 2024, the full month of June.
+  You get one average temperature for the whole month and the total rain of the whole month,
+  plus a graph and every day in a table. Real answer for Karachi: that June was 31.09 C on
+  average and only 12.2 mm rain fell in the full month.</p>
   <label>First date</label>
-  <input type="date" id="wxFrom" style="max-width:220px">
+  <input type="date" id="wxFrom" value="2024-06-01" style="max-width:220px">
   <label>Last date</label>
-  <input type="date" id="wxTo" style="max-width:220px">
+  <input type="date" id="wxTo" value="2024-06-30" style="max-width:220px">
   <button type="button" id="wxRangeBtn">Show average and total</button>
 </div>
 
 <div class="panel">
-  <h2><span class="badge">4</span>Compare two cities</h2>
-  <p>Write a second city. Both cities are checked on the same dates of Box 3, and you can see
-  which city was hotter and how much rain each city got.</p>
+  <h2><span class="badge">4</span>Which city was hotter?</h2>
+  <p class="small">Example: your city is Karachi and the second city is Dubai. Both are checked on
+  the same dates of Box 3. You see both cities side by side, and one clear line tells you which
+  city was hotter and by how much.</p>
   <label>Second city</label>
   <input type="text" id="wxCity2" value="Dubai" style="max-width:300px">
   <button type="button" id="wxCompareBtn">Compare the two cities</button>
 </div>
 
 <div class="panel">
-  <h2><span class="badge">5</span>One full year, month by month</h2>
-  <p>Write a year. You will see all 12 months of that year, one row for every month.</p>
+  <h2><span class="badge">5</span>How was one full year?</h2>
+  <p class="small">Example: the year below is 2024. You see all 12 months in one table, January to
+  December. Real answer for Karachi 2024: July was the hottest month (31.43 C average) and
+  August had the most rain (147.8 mm).</p>
   <label>Year</label>
   <input type="number" id="wxYear" value="2024" min="1950" max="2100" style="max-width:160px">
   <button type="button" id="wxMonthsBtn">Show the 12 months</button>
@@ -56,6 +64,7 @@ comes from Open-Meteo, a weather service with records of many past years.</p>
 
 <div id="wxResult" class="statsline"></div>
 <div id="wxCards"></div>
+<div id="wxSimple"></div>
 <div id="wxTable"></div>
 <div class="panel" id="wxChartPanel" style="display:none">
   <canvas id="wxChart"></canvas>
@@ -65,21 +74,25 @@ comes from Open-Meteo, a weather service with records of many past years.</p>
 <script>
 const el = document.getElementById('wxResult');
 const cardsBox = document.getElementById('wxCards');
+const simpleBox = document.getElementById('wxSimple');
 const tb = document.getElementById('wxTable');
 const csvBox = document.getElementById('wxCsv');
 let chart = null;
 function cityVal() { return document.getElementById('wxCity').value; }
 function busy(msg) {
   el.style.color = ''; el.textContent = msg;
-  cardsBox.innerHTML = ''; tb.innerHTML = ''; csvBox.innerHTML = '';
+  cardsBox.innerHTML = ''; simpleBox.innerHTML = ''; tb.innerHTML = ''; csvBox.innerHTML = '';
   document.getElementById('wxChartPanel').style.display = 'none';
   if (chart) { chart.destroy(); chart = null; }
 }
-function fail(msg) { el.textContent = msg; el.style.color = '#B45309'; cardsBox.innerHTML = ''; tb.innerHTML = ''; csvBox.innerHTML = ''; }
+function fail(msg) { el.textContent = msg; el.style.color = '#B45309'; cardsBox.innerHTML = ''; simpleBox.innerHTML = ''; tb.innerHTML = ''; csvBox.innerHTML = ''; }
 function statCards(items) {
   cardsBox.innerHTML = '<div class="cards">' + items.map(x =>
     '<div class="card' + (x[2] ? ' alert' : '') + '"><div class="num">' + x[1] + '</div><div class="lab">' + x[0] + '</div></div>'
   ).join('') + '</div>';
+}
+function simpleWords(text) {
+  simpleBox.innerHTML = '<div class="flash"><b>In simple words:</b> ' + text + '</div>';
 }
 function drawChart(labels, datasets) {
   document.getElementById('wxChartPanel').style.display = '';
@@ -113,6 +126,8 @@ document.getElementById('wxNowBtn').addEventListener('click', async () => {
     ['Air pressure', d.pressure + ' hPa'],
     ['Today: hottest / coldest', d.today_max + ' C / ' + d.today_min + ' C']
   ]);
+  simpleWords('right now in ' + d.city + ' the sky is "' + d.condition + '" and it is ' +
+    d.temperature + ' C hot. Today it can go up to ' + d.today_max + ' C and down to ' + d.today_min + ' C.');
 });
 
 document.getElementById('wxDayBtn').addEventListener('click', async () => {
@@ -129,6 +144,10 @@ document.getElementById('wxDayBtn').addEventListener('click', async () => {
     ['Rain that day', d.rainfall_mm + ' mm'],
     ['Strongest wind', d.max_wind_kmh + ' km/h']
   ]);
+  const feel = d.average_temperature >= 32 ? 'a very hot day' : d.average_temperature >= 26 ? 'a hot day' :
+    d.average_temperature >= 18 ? 'a normal, pleasant day' : d.average_temperature >= 8 ? 'a cold day' : 'a very cold day';
+  simpleWords('on ' + d.date + ', ' + d.city + ' had ' + feel + '. On average it was ' +
+    d.average_temperature + ' C, and ' + d.rainfall_mm + ' mm rain fell that day.');
 });
 
 document.getElementById('wxHourBtn').addEventListener('click', async () => {
@@ -149,6 +168,10 @@ document.getElementById('wxHourBtn').addEventListener('click', async () => {
   ]);
   csvButton('weather_hours.csv', ['Hour', 'Temperature C', 'Humidity %'],
     d.hours.map(x => [x.hour, x.temperature, x.humidity]));
+  let warm = d.hours[0], cool = d.hours[0];
+  d.hours.forEach(x => { if (x.temperature > warm.temperature) warm = x; if (x.temperature < cool.temperature) cool = x; });
+  simpleWords('the hottest hour of that day was ' + warm.hour + ' (' + warm.temperature +
+    ' C) and the coldest hour was ' + cool.hour + ' (' + cool.temperature + ' C).');
 });
 
 async function fetchRange(city) {
@@ -196,6 +219,8 @@ document.getElementById('wxRangeBtn').addEventListener('click', async () => {
   ]);
   csvButton('weather_days.csv', ['Date', 'Average C', 'Hottest C', 'Coldest C', 'Rain mm'],
     d.daily.map(x => [x.date, x.tmean, x.tmax, x.tmin, x.rain]));
+  simpleWords('in these ' + d.days + ' days, a normal day in ' + d.city + ' was about ' +
+    d.average_temperature + ' C hot. In the full period, ' + d.total_rainfall_mm + ' mm rain fell in total.');
 });
 
 document.getElementById('wxCompareBtn').addEventListener('click', async () => {
@@ -213,7 +238,6 @@ document.getElementById('wxCompareBtn').addEventListener('click', async () => {
     [a.city + ': total rain', a.total_rainfall_mm + ' mm'],
     [b.city + ': total rain', b.total_rainfall_mm + ' mm']
   ]);
-  tb.innerHTML = '<p><b>' + hotter.city + '</b> was hotter in these days, by ' + diff + ' C on average.</p>';
   const bmap = {};
   b.daily.forEach(x => { bmap[x.date] = x; });
   drawChart(a.daily.map(x => x.date), [
@@ -222,6 +246,9 @@ document.getElementById('wxCompareBtn').addEventListener('click', async () => {
   ]);
   csvButton('weather_compare.csv', ['Date', a.city + ' Average C', b.city + ' Average C', a.city + ' Rain mm', b.city + ' Rain mm'],
     a.daily.map(x => [x.date, x.tmean, bmap[x.date] ? bmap[x.date].tmean : '', x.rain, bmap[x.date] ? bmap[x.date].rain : '']));
+  const wetter = a.total_rainfall_mm >= b.total_rainfall_mm ? a : b;
+  simpleWords(hotter.city + ' was hotter, by ' + diff + ' C on average. ' + wetter.city +
+    ' got more rain (' + wetter.total_rainfall_mm + ' mm in total).');
 });
 
 document.getElementById('wxMonthsBtn').addEventListener('click', async () => {
@@ -243,6 +270,12 @@ document.getElementById('wxMonthsBtn').addEventListener('click', async () => {
   ]);
   csvButton('weather_months.csv', ['Month', 'Days', 'Average Temperature C', 'Total Rain mm'],
     d.months.map(m => [m.month, m.days, m.average_temperature, m.total_rainfall_mm]));
+  const withData = d.months.filter(m => m.average_temperature !== null);
+  const hotM = withData.reduce((p, c) => c.average_temperature > p.average_temperature ? c : p);
+  const rainM = withData.reduce((p, c) => (c.total_rainfall_mm || 0) > (p.total_rainfall_mm || 0) ? c : p);
+  simpleWords('in ' + d.year + ', the hottest month of ' + d.city + ' was ' + hotM.month +
+    ' (' + hotM.average_temperature + ' C on average) and the most rain fell in ' + rainM.month +
+    ' (' + rainM.total_rainfall_mm + ' mm).');
 });
 </script>
 {% endblock %}
