@@ -12,7 +12,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-import csv, io, json, os, statistics, tempfile, urllib.parse, urllib.request, uuid
+import csv, io, json, os, re, secrets, statistics, tempfile, time, urllib.parse, urllib.request, uuid
 
 app = Flask(__name__)
 app.secret_key = "earthscape-secret-key"
@@ -50,10 +50,53 @@ def inject_alert_count():
     return {"alert_count": len(ALERTS)}
 
 # ---------------- Users and roles ----------------
-USERS = {
-    "admin":   {"password": generate_password_hash("admin123"),   "role": "Administrator", "name": "System Administrator"},
-    "analyst": {"password": generate_password_hash("analyst123"), "role": "Analyst",       "name": "Climate Analyst"},
-}
+USERS_FILE = os.path.join(BASE, "data", "users.json")
+
+def load_users():
+    """User accounts. Passwords start from the built-in defaults below and can
+    later be changed by the Administrator (Admin page). New accounts made on
+    the Sign Up page are added here too. Changes are kept in data/users.json
+    when the filesystem allows it, and in memory otherwise."""
+    users = {
+        "admin":   {"password": generate_password_hash("admin123"),   "role": "Administrator", "name": "System Administrator", "email": ""},
+        "analyst": {"password": generate_password_hash("analyst123"), "role": "Analyst",       "name": "Climate Analyst",      "email": ""},
+    }
+    try:
+        with open(USERS_FILE) as f:
+            saved = json.load(f)
+        for uname, rec in saved.items():
+            if rec.get("password_hash"):
+                users[uname] = {
+                    "password": rec["password_hash"],
+                    "role": rec.get("role", users.get(uname, {}).get("role", "Analyst")),
+                    "name": rec.get("name", users.get(uname, {}).get("name", uname)),
+                    "email": rec.get("email", users.get(uname, {}).get("email", "")),
+                }
+    except Exception:
+        pass
+    return users
+
+USERS = load_users()
+
+def save_users():
+    try:
+        saved = {}
+        if os.path.exists(USERS_FILE):
+            with open(USERS_FILE) as f:
+                saved = json.load(f)
+        for uname, rec in USERS.items():
+            saved[uname] = {"password_hash": rec["password"], "role": rec["role"],
+                            "name": rec["name"], "email": rec.get("email", "")}
+        with open(USERS_FILE, "w") as f:
+            json.dump(saved, f, indent=2)
+    except OSError:
+        pass  # read-only hosting: the in-memory change still applies
+
+def save_user_password(uname):
+    save_users()
+
+# Password recovery requests: username -> {"code": hashed code, "expires": ts}
+RECOVERY_REQUESTS = {}
 ALERT_THRESHOLD = 1.5  # degrees C above the 1951-1980 baseline
 
 def login_required(f):
@@ -90,6 +133,78 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
+    return redirect(url_for("login"))
+
+# ---------------- Sign up ----------------
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        email = request.form.get("email", "").strip()
+        u = request.form.get("username", "").strip().lower()
+        pw = request.form.get("password", "")
+        confirm_pw = request.form.get("confirm_password", "")
+        problem = None
+        if not full_name or not u or not email or not pw:
+            problem = "Please fill every field before creating your account."
+        elif not re.match(r"^[a-z0-9_.]{3,20}$", u):
+            problem = "Choose a username of 3 to 20 characters: small letters, numbers, dot or underscore only."
+        elif "@" not in email or "." not in email:
+            problem = "Please enter a valid email address."
+        elif u in USERS:
+            problem = "That username is already taken. Please choose another one."
+        elif any(rec.get("email", "").lower() == email.lower() for rec in USERS.values()):
+            problem = "An account with that email already exists. Please sign in instead."
+        elif len(pw) < 6:
+            problem = "The password must be at least 6 characters long."
+        elif pw != confirm_pw:
+            problem = "The two passwords do not match. Please type them again."
+        if problem:
+            flash(problem)
+            return render_template("signup.html", full_name=full_name, email=email, username=u)
+        USERS[u] = {"password": generate_password_hash(pw), "role": "Analyst",
+                    "name": full_name, "email": email}
+        save_users()
+        session["user"] = u
+        session["role"] = "Analyst"
+        session["name"] = full_name
+        flash("Welcome to EarthScape, %s. Your account has been created." % full_name)
+        return redirect(url_for("dashboard"))
+    return render_template("signup.html")
+
+# ---------------- Password recovery ----------------
+@app.route("/forgot", methods=["GET", "POST"])
+def forgot():
+    if request.method == "POST":
+        u = request.form.get("username", "").strip()
+        if u in USERS:
+            code = "%06d" % secrets.randbelow(1000000)
+            RECOVERY_REQUESTS[u] = {"code": generate_password_hash(code),
+                                     "expires": time.time() + 1800}
+            return render_template("forgot.html", step="code", username=u, code=code)
+        flash("No account found with that username.")
+    return render_template("forgot.html", step="request")
+
+@app.route("/reset", methods=["POST"])
+def reset_password():
+    u = request.form.get("username", "").strip()
+    code = request.form.get("code", "").strip()
+    new_pw = request.form.get("new_password", "")
+    confirm_pw = request.form.get("confirm_password", "")
+    rec = RECOVERY_REQUESTS.get(u)
+    if not rec or time.time() > rec["expires"] or not check_password_hash(rec["code"], code):
+        flash("That recovery code is wrong or has expired. Please request a new one.")
+        return redirect(url_for("forgot"))
+    if len(new_pw) < 6:
+        flash("The new password must be at least 6 characters long.")
+        return render_template("forgot.html", step="code", username=u, code=None)
+    if new_pw != confirm_pw:
+        flash("The two passwords do not match. Please type them again.")
+        return render_template("forgot.html", step="code", username=u, code=None)
+    USERS[u]["password"] = generate_password_hash(new_pw)
+    save_user_password(u)
+    RECOVERY_REQUESTS.pop(u, None)
+    flash("Password updated. Please sign in with your new password.")
     return redirect(url_for("login"))
 
 # ---------------- Dashboard ----------------
@@ -623,7 +738,8 @@ def help_page():
 @login_required
 @admin_required
 def admin():
-    users = [{"username": u, "role": d["role"], "name": d["name"]} for u, d in USERS.items()]
+    users = [{"username": u, "role": d["role"], "name": d["name"],
+              "email": d.get("email", "")} for u, d in USERS.items()]
     errs = [(a - p) ** 2 for _, a, p in MODEL["test_years"]]
     stats = {
         "total_records": "10,064,718",
@@ -634,7 +750,29 @@ def admin():
         "feedback_count": len(read_feedback()),
     }
     return render_template("admin.html", users=users, feedback=read_feedback(),
-                           threshold=current_threshold(), stats=stats)
+                           threshold=current_threshold(), stats=stats,
+                           recovery=[{"username": u,
+                                      "minutes_left": max(0, int((r["expires"] - time.time()) // 60))}
+                                     for u, r in RECOVERY_REQUESTS.items()
+                                     if r["expires"] > time.time()])
+
+@app.route("/admin/reset-password", methods=["POST"])
+@login_required
+@admin_required
+def admin_reset_password():
+    u = request.form.get("username", "").strip()
+    new_pw = request.form.get("new_password", "")
+    if u not in USERS:
+        flash("Unknown username.")
+        return redirect(url_for("admin"))
+    if len(new_pw) < 6:
+        flash("The new password must be at least 6 characters long.")
+        return redirect(url_for("admin"))
+    USERS[u]["password"] = generate_password_hash(new_pw)
+    save_user_password(u)
+    RECOVERY_REQUESTS.pop(u, None)
+    flash("Password for %s has been reset. They can sign in with the new password now." % u)
+    return redirect(url_for("admin"))
 
 @app.route("/admin/threshold", methods=["POST"])
 @login_required
