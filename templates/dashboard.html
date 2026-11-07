@@ -1,35 +1,52 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Dashboard</h1>
-<div class="cards">
-  <div class="card"><div class="num">{{ stats.total_records }}</div><div class="lab">Total records in our data</div></div>
-  <div class="card"><div class="num">{{ stats.cleaned_rows }}</div><div class="lab">Clean records we use</div></div>
-  <div class="card"><div class="num">{{ stats.countries }}</div><div class="lab">Countries</div></div>
-  <div class="card alert"><div class="num">{{ stats.anomalies }}</div><div class="lab">Very hot months found (2001 to 2013)</div></div>
-  <div class="card"><div class="num">{{ stats.correlation }}</div><div class="lab">Link between CO2 gas and heat</div></div>
-  <div class="card"><div class="num">{{ stats.forecast_2050 }} C</div><div class="lab">Pakistan in 2050 (our estimate)</div></div>
+<div class="stat-grid">
+  <div class="stat-card">
+    <span class="stat-ic b"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg></span>
+    <div><div class="num">{{ stats.total_records }}</div><div class="lab">Total records in our data</div></div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-ic g"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+    <div><div class="num">{{ stats.cleaned_rows }}</div><div class="lab">Clean records we use</div></div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-ic c"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></span>
+    <div><div class="num">{{ stats.countries }}</div><div class="lab">Countries</div></div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-ic r"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4a2 2 0 10-4 0v9.26a4.5 4.5 0 104 0V4z"/><circle cx="12" cy="17.5" r="1.6" fill="currentColor" stroke="none"/></svg></span>
+    <div><div class="num">{{ stats.anomalies }}</div><div class="lab">Very hot months found (2001 to 2013)</div></div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-ic o"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07L11 5.9"/><path d="M14 10a5 5 0 00-7.07 0L4.1 12.83a5 5 0 007.07 7.07L13 18.1"/></svg></span>
+    <div><div class="num">{{ stats.correlation }}</div><div class="lab">Link between CO2 gas and heat</div></div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-ic v"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
+    <div><div class="num">{{ stats.forecast_2050 }} C</div><div class="lab">Pakistan in 2050 (our estimate)</div></div>
+  </div>
 </div>
 
 <div class="panel">
-  <h2>In simple words</h2>
-  <p>1. Pakistan is getting hotter, year by year.</p>
-  <p>2. Our computer model says Pakistan will reach about <b>22.07 C in the year 2050</b>.</p>
-  <p>3. From 2001 to 2013, <b>41 months</b> were very hot, much hotter than normal. The hottest of all was <b>March 2010</b>.</p>
-  <p>4. When CO2 gas goes up, the heat also goes up. This link is very strong: <b>0.9655</b>.</p>
+  <h2 class="panelhead"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 01-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.5 8.5 0 1121 11.5z"/></svg> In simple words</h2>
+  <div class="sumrow"><span class="sumnum">1</span><p>Pakistan is getting hotter, year by year.</p></div>
+  <div class="sumrow"><span class="sumnum">2</span><p>Our computer model says Pakistan will reach about <b>22.07 C in the year 2050</b>.</p></div>
+  <div class="sumrow"><span class="sumnum">3</span><p>From 2001 to 2013, <b>41 months</b> were very hot, much hotter than normal. The hottest of all was <b>March 2010</b>.</p></div>
+  <div class="sumrow last"><span class="sumnum">4</span><p>When CO2 gas goes up, the heat also goes up. This link is very strong: <b>0.9655</b>.</p></div>
 </div>
 
 <div class="grid2">
   <div class="panel">
-    <h2>Pakistan temperature: past years and future guess</h2>
+    <h2 class="panelhead"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg> Pakistan temperature: past years and future guess</h2>
     <canvas id="trendChart"></canvas>
   </div>
   <div class="panel">
-    <h2>Very hot months in each year</h2>
+    <h2 class="panelhead"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21v-7"/><path d="M11 21V5"/><path d="M16 21v-10"/><path d="M21 21v-4"/></svg> Very hot months in each year</h2>
     <canvas id="anomChart"></canvas>
   </div>
 </div>
 <div class="panel">
-  <h2>Latest years: Pakistan (new data)</h2>
+  <h2 class="panelhead"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg> Latest years: Pakistan (new data)</h2>
   <p>Our old data ends in 2013. This chart uses new data (ERA5) for the latest years.
   In <b>2025</b>, Pakistan's average temperature was <b>21.46 C</b>, one of the hottest years.
   Heat is still going up.</p>
