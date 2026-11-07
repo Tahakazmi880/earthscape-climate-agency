@@ -9,31 +9,50 @@
 <script>if (window.Chart) { Chart.defaults.color = '#A9C3E4'; Chart.defaults.borderColor = 'rgba(140,170,220,0.16)'; Chart.defaults.font.family = 'Arial, Helvetica, sans-serif'; }</script>
 </head>
 <body>
+{% macro ic(name) %}
+<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{% if name == 'home' %}<path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/>
+{% elif name == 'bars' %}<path d="M3 21h18"/><path d="M6 21v-7"/><path d="M11 21V5"/><path d="M16 21v-10"/><path d="M21 21v-4"/>
+{% elif name == 'trend' %}<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>
+{% elif name == 'bell' %}<path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10.3 21a2 2 0 003.4 0"/>
+{% elif name == 'link' %}<path d="M10 14a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07L11 5.9"/><path d="M14 10a5 5 0 00-7.07 0L4.1 12.83a5 5 0 007.07 7.07L13 18.1"/>
+{% elif name == 'cloud' %}<path d="M17.5 19a4.5 4.5 0 000-9 6 6 0 00-11.5 1.5A4 4 0 006.5 19h11z"/>
+{% elif name == 'upload' %}<path d="M16 16l-4-4-4 4"/><path d="M12 12v9"/><path d="M20.4 14.5A5 5 0 0018 7h-1.3A8 8 0 104 15.3"/>
+{% elif name == 'chat' %}<path d="M21 11.5a8.5 8.5 0 01-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.5 8.5 0 1121 11.5z"/>
+{% elif name == 'help' %}<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 015.8 1c0 2-3 2.6-3 4"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+{% elif name == 'gear' %}<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33 1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82 1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+{% elif name == 'person' %}<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/>
+{% endif %}
+</svg>
+{% endmacro %}
 {% if session.get('user') %}
 <div class="layout">
   <aside class="sidebar">
     <div class="sidebrand">
-      <div class="logo">&#127758;</div>
+      <img class="logoimg" src="{{ url_for('static', filename='earth-logo.jpg') }}" alt="EarthScape logo">
       <div>
         <div class="brandname">EarthScape</div>
         <div class="brandsub">Climate Agency</div>
       </div>
     </div>
     <nav class="sidenav">
-      <a href="{{ url_for('dashboard') }}"{% if request.path == url_for('dashboard') %} class="active"{% endif %}>&#127968; Dashboard</a>
-      <a href="{{ url_for('explorer') }}"{% if request.path == url_for('explorer') %} class="active"{% endif %}>&#128202; Data Explorer</a>
-      <a href="{{ url_for('predictions') }}"{% if request.path == url_for('predictions') %} class="active"{% endif %}>&#128200; Predictions</a>
-      <a href="{{ url_for('alerts') }}"{% if request.path == url_for('alerts') %} class="active"{% endif %}>&#128276; Alerts</a>
-      <a href="{{ url_for('correlation') }}"{% if request.path == url_for('correlation') %} class="active"{% endif %}>&#128279; Correlation</a>
-      <a href="{{ url_for('weather_page') }}"{% if request.path == url_for('weather_page') %} class="active"{% endif %}>&#127780; Live Weather</a>
-      <a href="{{ url_for('upload') }}"{% if request.path == url_for('upload') %} class="active"{% endif %}>&#9729; Upload Data</a>
-      <a href="{{ url_for('feedback') }}"{% if request.path == url_for('feedback') %} class="active"{% endif %}>&#128172; Feedback</a>
-      <a href="{{ url_for('help_page') }}"{% if request.path == url_for('help_page') %} class="active"{% endif %}>&#10067; Help</a>
+      <a href="{{ url_for('dashboard') }}"{% if request.path == url_for('dashboard') %} class="active"{% endif %}>{{ ic('home') }} Dashboard</a>
+      <a href="{{ url_for('explorer') }}"{% if request.path == url_for('explorer') %} class="active"{% endif %}>{{ ic('bars') }} Data Explorer</a>
+      <a href="{{ url_for('predictions') }}"{% if request.path == url_for('predictions') %} class="active"{% endif %}>{{ ic('trend') }} Predictions</a>
+      <a href="{{ url_for('alerts') }}"{% if request.path == url_for('alerts') %} class="active"{% endif %}>{{ ic('bell') }} Alerts <span class="navbadge">{{ alert_count }}</span></a>
+      <a href="{{ url_for('correlation') }}"{% if request.path == url_for('correlation') %} class="active"{% endif %}>{{ ic('link') }} Correlation</a>
+      <a href="{{ url_for('weather_page') }}"{% if request.path == url_for('weather_page') %} class="active"{% endif %}>{{ ic('cloud') }} Live Weather</a>
+      <a href="{{ url_for('upload') }}"{% if request.path == url_for('upload') %} class="active"{% endif %}>{{ ic('upload') }} Upload Data</a>
+      <a href="{{ url_for('feedback') }}"{% if request.path == url_for('feedback') %} class="active"{% endif %}>{{ ic('chat') }} Feedback</a>
+      <a href="{{ url_for('help_page') }}"{% if request.path == url_for('help_page') %} class="active"{% endif %}>{{ ic('help') }} Help</a>
       {% if session.get('role') == 'Administrator' %}
-      <a href="{{ url_for('admin') }}"{% if request.path == url_for('admin') %} class="active"{% endif %}>&#9881; Admin</a>
+      <a href="{{ url_for('admin') }}"{% if request.path == url_for('admin') %} class="active"{% endif %}>{{ ic('gear') }} Admin</a>
       {% endif %}
     </nav>
-    <div class="sidecard">&#127758;<br><strong>A Greener Planet</strong><br>A Safer Tomorrow</div>
+    <div class="sidecard">
+      <img src="{{ url_for('static', filename='greener-planet.jpg') }}" alt="A greener planet">
+      <div class="sc-text"><span class="leaf">&#127793;</span> <strong>A Greener Planet</strong><br>A Safer Tomorrow</div>
+    </div>
     <div class="sidefoot">&copy; 2025 EarthScape Climate Agency</div>
   </aside>
   <div class="content">
@@ -43,9 +62,9 @@
         <div class="pagesub">Real-Time Climate Intelligence for a Sustainable Future</div>
       </div>
       <div class="herouser">
-        <span class="livepill"><span class="livedot"></span> Live Data</span>
-        <span class="avatar">{{ (session.get('name') or 'U')[0] }}</span>
-        <span class="uname">{{ session.get('name') }} ({{ session.get('role') }})<br><a href="{{ url_for('logout') }}">Logout</a></span>
+        <span class="livepill"><span class="livedot"></span> Live Data <span class="bolt">&#9889;</span></span>
+        <span class="avatar" title="{{ session.get('name') }} ({{ session.get('role') }})">{{ ic('person') }}</span>
+        <a class="logoutlink" href="{{ url_for('logout') }}">Logout</a>
       </div>
     </div>
     <main>
