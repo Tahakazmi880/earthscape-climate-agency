@@ -2,40 +2,37 @@
 {% block content %}
 <h1>Dashboard</h1>
 <div class="cards">
-  <div class="card"><div class="num">{{ stats.total_records }}</div><div class="lab">Total climate records sourced</div></div>
-  <div class="card"><div class="num">{{ stats.cleaned_rows }}</div><div class="lab">Rows after cleaning (main file)</div></div>
-  <div class="card"><div class="num">{{ stats.countries }}</div><div class="lab">Countries in the dataset</div></div>
-  <div class="card alert"><div class="num">{{ stats.anomalies }}</div><div class="lab">Anomaly alerts (2001 to 2013)</div></div>
-  <div class="card"><div class="num">{{ stats.correlation }}</div><div class="lab">CO2 and temperature correlation</div></div>
-  <div class="card"><div class="num">{{ stats.forecast_2050 }} C</div><div class="lab">Pakistan forecast for 2050</div></div>
+  <div class="card"><div class="num">{{ stats.total_records }}</div><div class="lab">Total records in our data</div></div>
+  <div class="card"><div class="num">{{ stats.cleaned_rows }}</div><div class="lab">Clean records we use</div></div>
+  <div class="card"><div class="num">{{ stats.countries }}</div><div class="lab">Countries</div></div>
+  <div class="card alert"><div class="num">{{ stats.anomalies }}</div><div class="lab">Very hot months found (2001 to 2013)</div></div>
+  <div class="card"><div class="num">{{ stats.correlation }}</div><div class="lab">Link between CO2 gas and heat</div></div>
+  <div class="card"><div class="num">{{ stats.forecast_2050 }} C</div><div class="lab">Pakistan in 2050 (our estimate)</div></div>
 </div>
 
 <div class="panel">
-  <h2>Interpretation of the Dashboard</h2>
-  <p>The data shows a clear warming trend. Pakistan's yearly average temperature has risen over the long
-  term, and the trained prediction model estimates it will reach about <b>22.07 C by 2050</b>. Between 2001 and
-  2013, <b>41 months</b> were abnormally hot (1.5 C or more above their 1951 to 1980 normal), and these months are
-  listed as alerts by the system. The strongest single anomaly was <b>March 2010, at +4.31 C</b> above normal.
-  The correlation between CO2 and global temperature is <b>0.9655</b>, a very strong positive relation, which
-  supports the warming trend shown by the models.</p>
+  <h2>In simple words</h2>
+  <p>1. Pakistan is getting hotter, year by year.</p>
+  <p>2. Our computer model says Pakistan will reach about <b>22.07 C in the year 2050</b>.</p>
+  <p>3. From 2001 to 2013, <b>41 months</b> were very hot, much hotter than normal. The hottest of all was <b>March 2010</b>.</p>
+  <p>4. When CO2 gas goes up, the heat also goes up. This link is very strong: <b>0.9655</b>.</p>
 </div>
 
 <div class="grid2">
   <div class="panel">
-    <h2>Pakistan Temperature Trend and Forecast</h2>
+    <h2>Pakistan temperature: past years and future guess</h2>
     <canvas id="trendChart"></canvas>
   </div>
   <div class="panel">
-    <h2>Anomaly Alerts per Year</h2>
+    <h2>Very hot months in each year</h2>
     <canvas id="anomChart"></canvas>
   </div>
 </div>
 <div class="panel">
-  <h2>Recent Observations: Pakistan (Copernicus ERA5)</h2>
-  <p>The Berkeley Earth records used for model training end in 2013. For current monitoring, the agency also
-  tracks Copernicus ERA5 observations (via Our World in Data). Pakistan's yearly average temperature reached
-  <b>21.46 C in 2025</b>, among the warmest years in the ERA5 record, which continues the warming direction
-  shown by the trained model.</p>
+  <h2>Latest years: Pakistan (new data)</h2>
+  <p>Our old data ends in 2013. This chart uses new data (ERA5) for the latest years.
+  In <b>2025</b>, Pakistan's average temperature was <b>21.46 C</b>, one of the hottest years.
+  Heat is still going up.</p>
   <canvas id="recentChart"></canvas>
 </div>
 <script>
@@ -48,16 +45,16 @@ const fcData = hist.map(() => null).concat(Object.values(fc));
 fcData[hist.length - 1] = hist[hist.length - 1][1];
 new Chart(document.getElementById('trendChart'), {type: 'line',
   data: {labels: labels, datasets: [
-    {label: 'Yearly average temperature', data: histData, borderColor: '#1F3864', pointRadius: 0, borderWidth: 1.5},
-    {label: 'Model forecast', data: fcData, borderColor: '#C00000', pointRadius: 2, borderWidth: 2, borderDash: [5, 4]}
+    {label: 'Temperature of past years', data: histData, borderColor: '#4DABFF', pointRadius: 0, borderWidth: 1.5},
+    {label: 'Future guess', data: fcData, borderColor: '#FF6B74', pointRadius: 2, borderWidth: 2, borderDash: [5, 4]}
   ]}, options: {scales: {x: {ticks: {maxTicksLimit: 12}}}}});
 const apy = {{ anom_per_year|tojson }};
 new Chart(document.getElementById('anomChart'), {type: 'bar',
-  data: {labels: Object.keys(apy), datasets: [{label: 'Anomalous months', data: Object.values(apy), backgroundColor: '#C55A11'}]},
+  data: {labels: Object.keys(apy), datasets: [{label: 'Very hot months', data: Object.values(apy), backgroundColor: '#FF9F45'}]},
   options: {plugins: {legend: {display: false}}}});
 const recent = {{ recent.pakistan_yearly|tojson }};
 new Chart(document.getElementById('recentChart'), {type: 'bar',
-  data: {labels: Object.keys(recent), datasets: [{label: 'Pakistan yearly average temperature (C)', data: Object.values(recent), backgroundColor: '#2E75B6'}]},
+  data: {labels: Object.keys(recent), datasets: [{label: 'Pakistan yearly average temperature (C)', data: Object.values(recent), backgroundColor: '#2E9BFF'}]},
   options: {plugins: {legend: {display: false}}, scales: {y: {min: 19}}}});
 </script>
 {% endblock %}
