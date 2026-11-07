@@ -2,8 +2,9 @@
 {% block title %}Login - EarthScape{% endblock %}
 {% block content_login %}
 <div class="loginbox">
-  <h2>EarthScape Climate Agency</h2>
-  <p class="sub">Climate data platform. Please sign in.</p>
+  <img class="loginlogo" src="{{ url_for('static', filename='earth-logo.jpg') }}" alt="EarthScape logo">
+  <h2>EarthScape<br><span>Climate Agency</span></h2>
+  <p class="sub">Real-Time Climate Intelligence for a Sustainable Future</p>
   <form method="post">
     <label>Username</label>
     <input type="text" name="username" required>
