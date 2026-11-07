@@ -241,6 +241,7 @@ main > h1::before { content: ""; width: 5px; height: 23px; border-radius: 3px; b
 .showbtn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); margin-top: 0; padding: 6px 12px; font-size: 12.5px; border-radius: 8px; background: rgba(46,155,255,0.16); border: 1px solid rgba(46,155,255,0.5); color: #BFE0FF; box-shadow: none; }
 .showbtn:hover { background: rgba(46,155,255,0.3); }
 .loginbox .passwrap input { max-width: none; }
+.loginbox .showbtn, .showbtn { width: auto; }
 .forgotlink { text-align: right; margin: 10px 0 0; font-size: 13.5px; }
 .forgotlink a { color: #5FB2FF; text-decoration: none; }
 .forgotlink a:hover { text-decoration: underline; }
@@ -249,3 +250,18 @@ main > h1::before { content: ""; width: 5px; height: 23px; border-radius: 3px; b
 .codebox .codelab { color: #8FA9CC; font-size: 12.5px; letter-spacing: 1px; text-transform: uppercase; }
 .codebox .codeval { font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #fff; margin: 5px 0; }
 .codebox .codehint { color: #A9C3E4; font-size: 12.5px; line-height: 1.5; }
+
+/* ---------- phone layout: clean single column ---------- */
+@media (max-width: 900px) {
+  .layout { display: block; }
+  .sidebar { width: 100%; height: auto; position: static; padding: 14px 12px 10px; display: block; }
+  .sidenav { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding-bottom: 8px; scrollbar-width: none; }
+  .sidenav::-webkit-scrollbar { display: none; }
+  .sidenav a { flex: 0 0 auto; white-space: nowrap; padding: 8px 11px; font-size: 13.5px; gap: 7px; }
+  .sidenav a .ic { width: 16px; height: 16px; }
+  .navbadge { margin-left: 2px; min-width: 19px; height: 19px; font-size: 11px; }
+  .sidecard { display: none; }
+  .sidefoot { padding-top: 2px; }
+  .hero { flex-direction: column; align-items: flex-start; }
+  .herouser { flex-wrap: wrap; }
+}
