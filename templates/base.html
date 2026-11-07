@@ -37,12 +37,16 @@
     <div class="sidefoot">&copy; 2025 EarthScape Climate Agency</div>
   </aside>
   <div class="content">
-    <div class="topbar">
+    <div class="hero">
       <div>
-        <div class="pagetitle">EarthScape <span>Climate Agency</span></div>
+        <div class="pagetitle">EarthScape<br><span>Climate Agency</span></div>
         <div class="pagesub">Real-Time Climate Intelligence for a Sustainable Future</div>
       </div>
-      <div class="userbox"><span class="livedot"></span> Live Data &nbsp;|&nbsp; {{ session.get('name') }} ({{ session.get('role') }}) &nbsp;|&nbsp; <a href="{{ url_for('logout') }}">Logout</a></div>
+      <div class="herouser">
+        <span class="livepill"><span class="livedot"></span> Live Data</span>
+        <span class="avatar">{{ (session.get('name') or 'U')[0] }}</span>
+        <span class="uname">{{ session.get('name') }} ({{ session.get('role') }})<br><a href="{{ url_for('logout') }}">Logout</a></span>
+      </div>
     </div>
     <main>
       {% with messages = get_flashed_messages() %}{% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}{% endwith %}
