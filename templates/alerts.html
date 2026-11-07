@@ -19,8 +19,11 @@
         <div class="l">Above Normal</div>
       </div>
     </div>
-    <div class="bseg bmid">An alert is raised when a month's average temperature is {{ threshold }}&deg;C or more
-    above its normal (baseline) temperature, where the baseline is the 1951 to 1980 average of the same month for Pakistan.</div>
+    <div class="bseg bmid"><b>How to read this page, in simple words:</b> first we found Pakistan's
+    <b>normal</b> temperature for every month (the average of 1951 to 1980). Then we checked every month
+    from 2001 to 2013 ({{ months_checked }} months). A month that was {{ threshold }}&deg;C or more hotter
+    than its normal became an <b>alert</b>. Total alerts found: <b>{{ alerts|length }}</b>. These numbers are
+    counted from the project data itself, they are not typed by hand. The red 41 badge in the menu is this same count.</div>
     <div class="bseg periodseg">
       <svg class="cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       <div>
@@ -42,9 +45,21 @@
 
     <div id="viewChecker">
       <div class="panel checkerpanel">
-        <p class="infoline"><span class="infoi">&#9432;</span> Check any month yourself: enter its average temperature and the system compares it with the 1951 to 1980 baseline right now.</p>
+        <p class="infoline"><span class="infoi">&#9432;</span> <b>Try it yourself:</b> pick a country, type a temperature,
+        and press the button. The system compares it with that country's <b>normal</b> temperature (its 1951 to 1980 average)
+        right now and tells you at once: normal, or alert. For Pakistan you check one <b>month</b>. For other countries the
+        project data is year by year, so you check one full <b>year</b>.</p>
         <div class="cform">
           <div class="cfield">
+            <label>Country</label>
+            <div class="fieldwrap">
+              <span class="fic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></span>
+              <select id="chkCountry">
+                {% for c in countries %}<option value="{{ c }}" {% if c == 'Pakistan' %}selected{% endif %}>{{ c }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="cfield" id="chkMonthField">
             <label>Month</label>
             <div class="fieldwrap">
               <span class="fic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
@@ -56,8 +71,15 @@
               </select>
             </div>
           </div>
+          <div class="cfield" id="chkYearField" style="display:none">
+            <label>Year</label>
+            <div class="fieldwrap">
+              <span class="fic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+              <input type="number" id="chkYear" value="2010" min="1800" max="2100">
+            </div>
+          </div>
           <div class="cfield">
-            <label>Average temperature of that month (&deg;C)</label>
+            <label id="chkTempLabel">Average temperature of that month (&deg;C)</label>
             <div class="fieldwrap">
               <span class="fic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4a2 2 0 10-4 0v9.26a4.5 4.5 0 104 0V4z"/></svg></span>
               <input type="number" step="0.1" min="-60" max="50" id="chkTemp" value="32.5">
@@ -70,7 +92,8 @@
 
       <div class="panel recordspanel">
         <h2 class="rechead"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg> Temperature Data Records</h2>
-        <p class="small">Pakistan's very hot months, biggest difference first. This is the project data, checked month by month from 2001 to 2013.</p>
+        <p class="small">These are the {{ alerts|length }} alert months the system found in Pakistan's project data,
+        biggest difference first. Every row is one real month that was checked, from 2001 to 2013.</p>
         <div class="tablewrap">
           <table>
             <tr><th>#</th><th>Month</th><th>Actual Temperature</th><th>Baseline (Normal)</th><th>Above Normal</th><th>Level</th></tr>
@@ -145,16 +168,33 @@ new Chart(document.getElementById('sparkChart'), {type: 'line',
   options: {plugins: {legend: {display: false}}, scales: {x: {display: false}, y: {display: false}},
     events: [], animation: false, maintainAspectRatio: false}});
 
+const chkCountry = document.getElementById('chkCountry');
+function chkMode() {
+  const other = chkCountry.value !== 'Pakistan';
+  document.getElementById('chkMonthField').style.display = other ? 'none' : '';
+  document.getElementById('chkYearField').style.display = other ? '' : 'none';
+  document.getElementById('chkTempLabel').textContent = other ?
+    'Average temperature of that full year (\u00B0C)' : 'Average temperature of that month (\u00B0C)';
+  document.getElementById('chkResult').textContent = '';
+}
+chkCountry.addEventListener('change', chkMode);
+
 document.getElementById('chkBtn').addEventListener('click', async () => {
-  const m = document.getElementById('chkMonth').value;
+  const c = chkCountry.value;
   const t = document.getElementById('chkTemp').value;
-  const r = await fetch('/api/anomaly-check?month=' + m + '&temp=' + encodeURIComponent(t));
+  let url = '/api/anomaly-check?country=' + encodeURIComponent(c) + '&temp=' + encodeURIComponent(t);
+  if (c === 'Pakistan') url += '&month=' + document.getElementById('chkMonth').value;
+  else url += '&year=' + document.getElementById('chkYear').value;
+  const r = await fetch(url);
   const d = await r.json();
   const el = document.getElementById('chkResult');
   if (d.error) { el.textContent = d.error; el.style.color = '#FFB020'; return; }
-  el.textContent = d.month + ': actual ' + d.temperature + ' C, baseline ' + d.baseline + ' C, difference +' +
-    d.difference + ' C. ' + (d.alert ? 'ALERT RAISED (' + d.level + '): this month is abnormally hot.' :
-    'No alert: this month is within the normal range.');
+  const what = d.mode === 'year' ? 'year' : 'month';
+  const diffText = (d.difference >= 0 ? '+' : '') + d.difference;
+  el.textContent = d.country + ', ' + d.label + ': you entered ' + d.temperature + ' C, normal is ' +
+    d.baseline + ' C, difference ' + diffText + ' C. ' + (d.alert ?
+    'ALERT RAISED (' + d.level + '): this ' + what + ' is abnormally hot.' :
+    'No alert: this ' + what + ' is within the normal range.');
   el.style.color = d.alert ? '#FF6B74' : '#2BD96B';
 });
 
