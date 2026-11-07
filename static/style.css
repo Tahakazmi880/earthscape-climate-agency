@@ -234,3 +234,18 @@ main > h1::before { content: ""; width: 5px; height: 23px; border-radius: 3px; b
 .sumnum { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(180deg, #2E9BFF, #0E5FE3); color: #fff; font-size: 13px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 3px 9px rgba(14,95,227,0.45); }
 @media (max-width: 1250px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 640px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------- login UX: show password, forgot link, recovery code ---------- */
+.passwrap { position: relative; }
+.passwrap input { width: 100%; max-width: none; padding-right: 74px; }
+.showbtn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); margin-top: 0; padding: 6px 12px; font-size: 12.5px; border-radius: 8px; background: rgba(46,155,255,0.16); border: 1px solid rgba(46,155,255,0.5); color: #BFE0FF; box-shadow: none; }
+.showbtn:hover { background: rgba(46,155,255,0.3); }
+.loginbox .passwrap input { max-width: none; }
+.forgotlink { text-align: right; margin: 10px 0 0; font-size: 13.5px; }
+.forgotlink a { color: #5FB2FF; text-decoration: none; }
+.forgotlink a:hover { text-decoration: underline; }
+.loginflash { background: rgba(23,77,43,0.55); border: 1px solid #2BD96B; color: #B9F5CF; border-radius: 10px; padding: 9px 12px; margin: 12px 0 4px; font-size: 13.5px; text-align: left; }
+.codebox { background: rgba(8,30,60,0.75); border: 1px dashed rgba(95,178,255,0.7); border-radius: 12px; padding: 14px 12px; margin: 14px 0 6px; }
+.codebox .codelab { color: #8FA9CC; font-size: 12.5px; letter-spacing: 1px; text-transform: uppercase; }
+.codebox .codeval { font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #fff; margin: 5px 0; }
+.codebox .codehint { color: #A9C3E4; font-size: 12.5px; line-height: 1.5; }
