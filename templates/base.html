@@ -34,6 +34,7 @@
         <div class="brandname">EarthScape</div>
         <div class="brandsub">Climate Agency</div>
       </div>
+      <button type="button" class="menubtn" id="menuBtn" aria-label="Open menu">&#9776; Menu</button>
     </div>
     <nav class="sidenav">
       <a href="{{ url_for('dashboard') }}"{% if request.path == url_for('dashboard') %} class="active"{% endif %}>{{ ic('home') }} Dashboard</a>
@@ -75,6 +76,15 @@
     </main>
   </div>
 </div>
+<script>
+  (function () {
+    var btn = document.getElementById('menuBtn');
+    var nav = document.querySelector('.sidenav');
+    if (btn && nav) {
+      btn.addEventListener('click', function () { nav.classList.toggle('open'); });
+    }
+  })();
+</script>
 {% else %}
 <main class="bare">
   {% block content_login %}{% endblock %}
