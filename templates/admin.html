@@ -4,8 +4,8 @@
 <div class="panel">
   <h2>Users and Roles</h2>
   <table>
-    <tr><th>Username</th><th>Full name</th><th>Role</th></tr>
-    {% for u in users %}<tr><td>{{ u.username }}</td><td>{{ u.name }}</td><td>{{ u.role }}</td></tr>{% endfor %}
+    <tr><th>Username</th><th>Full name</th><th>Email</th><th>Role</th></tr>
+    {% for u in users %}<tr><td>{{ u.username }}</td><td>{{ u.name }}</td><td>{{ u.email or '' }}</td><td>{{ u.role }}</td></tr>{% endfor %}
   </table>
   <p>Alert threshold: <b>{{ threshold }} C</b> above the 1951 to 1980 baseline. Alerts and the live
   anomaly checker use this setting.</p>
@@ -14,6 +14,23 @@
     <input type="number" step="0.1" min="0.5" max="5.0" name="threshold" value="{{ threshold }}" style="max-width:220px">
     <button type="submit">Update threshold</button>
   </form>
+</div>
+<div class="panel">
+  <h2>Reset a User's Password</h2>
+  <p>If a user forgets their password, set a new one here. They can then sign in with it and it stays saved.</p>
+  <form method="post" action="{{ url_for('admin_reset_password') }}">
+    <label>Username</label>
+    <select name="username" style="max-width:260px">
+      {% for u in users %}<option value="{{ u.username }}">{{ u.username }} ({{ u.role }})</option>{% endfor %}
+    </select>
+    <label>New password (at least 6 characters)</label>
+    <input type="text" name="new_password" style="max-width:260px" required>
+    <button type="submit">Reset password</button>
+  </form>
+  {% if recovery %}
+  <p style="margin-top:12px"><b>Password recovery in progress:</b>
+  {% for r in recovery %}{{ r.username }} (code expires in about {{ r.minutes_left }} minutes){% if not loop.last %}, {% endif %}{% endfor %}</p>
+  {% endif %}
 </div>
 <div class="panel">
   <h2>System and Data</h2>
