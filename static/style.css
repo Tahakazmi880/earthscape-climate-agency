@@ -77,3 +77,45 @@ button:hover { background: linear-gradient(180deg, #4DABFF, #1B7FE0); }
   main { padding: 16px; }
   .topbar { padding: 16px; }
 }
+
+/* ---------- hero header (Earth photo, like the reference) ---------- */
+.hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; padding: 26px 28px 30px; background-image: linear-gradient(90deg, rgba(3,8,20,0.82) 30%, rgba(3,8,20,0.25) 65%, rgba(3,8,20,0.45)), url("earth-hero.jpg"); background-size: cover; background-position: center 62%; border-bottom: 1px solid #1C3A66; }
+.hero .pagetitle { font-size: 34px; line-height: 1.12; text-shadow: 0 2px 14px rgba(0,0,0,0.7); }
+.hero .pagesub { color: #C7D8F2; font-size: 14px; margin-top: 6px; text-shadow: 0 1px 8px rgba(0,0,0,0.8); }
+.herouser { display: flex; align-items: center; gap: 11px; }
+.livepill { display: inline-flex; align-items: center; gap: 3px; background: rgba(6,40,24,0.75); border: 1px solid #2BD96B; color: #B9F5CF; border-radius: 999px; padding: 7px 14px; font-size: 13.5px; font-weight: bold; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(180deg, #2E9BFF, #0E5FE3); color: #fff; font-weight: bold; font-size: 17px; display: inline-flex; align-items: center; justify-content: center; border: 2px solid rgba(160,205,255,0.7); }
+.uname { font-size: 12.5px; color: #C7D8F2; line-height: 1.45; }
+.uname a { color: #FFFFFF; font-weight: bold; text-decoration: none; }
+.uname a:hover { text-decoration: underline; }
+main.bare { background-image: linear-gradient(rgba(3,6,14,0.66), rgba(3,6,14,0.86)), url("earth-hero.jpg"); background-size: cover; background-position: center; }
+
+/* ---------- alerts page: banner, tabs, insights, pills ---------- */
+.alertbanner { background: linear-gradient(120deg, rgba(122,24,40,0.5), rgba(24,12,30,0.75) 60%), linear-gradient(180deg, rgba(17,36,66,0.92), rgba(10,22,42,0.94)); border: 1px solid #7A2436; border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+.alertbanner .bhead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.alertbanner h1 { margin-bottom: 4px; }
+.alertbanner .bsub { color: #E8B7BE; font-size: 13.5px; }
+.alertpill { background: rgba(90,10,24,0.8); border: 1px solid #FF5266; color: #FFD7DB; border-radius: 999px; padding: 6px 13px; font-size: 13px; font-weight: bold; white-space: nowrap; }
+.alertpill .dot { color: #FF5266; }
+.brow { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
+.bigtemp { min-width: 170px; }
+.bigtemp .n { font-size: 34px; font-weight: bold; color: #FF6B74; }
+.bigtemp .l { color: #E8B7BE; font-size: 13px; }
+.bmid { flex: 1; min-width: 240px; color: #D7E6FA; font-size: 14px; line-height: 1.55; }
+.bright { min-width: 210px; color: #D7E6FA; font-size: 13.5px; line-height: 1.6; }
+.bright canvas { display: block; margin-top: 6px; max-width: 210px; }
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.tabbtn { margin-top: 0; background: rgba(10,26,50,0.85); border: 1px solid #24508F; color: #B9CFEA; box-shadow: none; }
+.tabbtn.active { background: linear-gradient(180deg, #2E9BFF, #0E6BE0); color: #fff; border-color: #2E9BFF; box-shadow: 0 4px 14px rgba(14,107,224,0.35); }
+.checkergrid { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.insights { background: linear-gradient(180deg, rgba(17,36,66,0.92), rgba(10,22,42,0.94)); border: 1px solid #1C3A66; border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+.insights h2 { margin-bottom: 11px; }
+.insights .row { font-size: 14px; color: #D7E6FA; margin-bottom: 8px; }
+.insights .tick { color: #2BD96B; font-weight: bold; margin-right: 6px; }
+.insights .earthstrip { height: 92px; border-radius: 10px; margin: 12px 0 10px; background-image: linear-gradient(rgba(3,6,14,0.1), rgba(3,6,14,0.45)), url("earth-hero.jpg"); background-size: cover; background-position: center 70%; }
+.insights .quote { font-style: italic; color: #A9C3E4; font-size: 13.5px; line-height: 1.5; }
+.pill { display: inline-block; border-radius: 999px; padding: 3px 12px; font-size: 12.5px; font-weight: bold; color: #fff; }
+.pill.severe { background: #C81E3A; }
+.pill.high { background: #D97706; }
+.pill.mod { background: #33507E; }
+@media (max-width: 900px) { .checkergrid { grid-template-columns: 1fr; } .hero { padding: 20px 16px 22px; } }
