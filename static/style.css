@@ -278,3 +278,14 @@ main > h1::before { content: ""; width: 5px; height: 23px; border-radius: 3px; b
   .stat-ic { width: 44px; height: 44px; }
   .stat-ic .ic { width: 23px; height: 23px; }
 }
+
+/* ---------- universal layout safety: nothing wider than the screen ---------- */
+.alerts-grid > *, .checkergrid > *, .grid2 > * { min-width: 0; }
+.panel, .stat-card, .loginbox { max-width: 100%; }
+@media (max-width: 900px) {
+  .panel { overflow-x: auto; }
+  table { font-size: 13px; }
+  th, td { padding: 7px 8px; }
+  .tabs { flex-wrap: nowrap; }
+  .tabbtn { flex: 1 1 0; justify-content: center; padding: 11px 6px; font-size: 13.5px; white-space: nowrap; }
+}
