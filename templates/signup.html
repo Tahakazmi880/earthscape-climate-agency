@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Sign Up - EarthScape{% endblock %}
+{% block content_login %}
+<div class="loginbox">
+  <img class="loginlogo" src="{{ url_for('static', filename='earth-logo.jpg') }}" alt="EarthScape logo">
+  <h2>Create Your Account</h2>
+  <p class="sub">Sign up as a Climate Analyst. You can then sign in any time and check the climate data yourself.</p>
+  {% with messages = get_flashed_messages() %}{% if messages %}<div class="loginflash err">{{ messages[0] }}</div>{% endif %}{% endwith %}
+  <form method="post" action="{{ url_for('signup') }}">
+    <label>Full name</label>
+    <input type="text" name="full_name" value="{{ full_name|default('') }}" required>
+    <label>Email address</label>
+    <input type="email" name="email" value="{{ email|default('') }}" required>
+    <label>Choose a username</label>
+    <input type="text" name="username" value="{{ username|default('') }}" required>
+    <label>Password (at least 6 characters)</label>
+    <div class="passwrap">
+      <input type="password" name="password" id="signPw" required>
+      <button type="button" class="showbtn" id="toggleSignPw">Show</button>
+    </div>
+    <label>Type the password again</label>
+    <input type="password" name="confirm_password" id="signPw2" required>
+    <button type="submit">Create my account</button>
+  </form>
+  <p class="hint">Already have an account? <a href="{{ url_for('login') }}">Sign in here</a></p>
+</div>
+<script>
+  (function () {
+    var btn = document.getElementById('toggleSignPw');
+    var a = document.getElementById('signPw');
+    var b = document.getElementById('signPw2');
+    btn.addEventListener('click', function () {
+      var show = a.type === 'password';
+      a.type = show ? 'text' : 'password';
+      b.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
+    });
+  })();
+</script>
+{% endblock %}
