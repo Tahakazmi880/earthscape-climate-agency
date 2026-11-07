@@ -2,6 +2,10 @@
 {% block content %}
 <h1>Correlation Analysis: CO2 and Temperature</h1>
 <div class="panel">
+  <p><b>Whose data is this?</b> This graph is not for one country. It uses <b>whole-world (global)</b> data:
+  the CO2 of the whole Earth's air (NOAA record) and the average land temperature of the whole world,
+  every year from <b>1959 to 2025</b>. Each dot is one year.
+  <b>Move your mouse over a dot</b> and a box shows that year, its CO2 and its temperature.</p>
   <p>The Pearson correlation between yearly CO2 levels and global land temperature (1959 to 2025) is
   <b>0.9655</b>. A value this close to 1 means a very strong positive relation: as CO2 increased,
   temperature increased with it.</p>
@@ -10,8 +14,15 @@
 <script>
 const co2 = {{ co2|tojson }};
 new Chart(document.getElementById('co2Chart'), {type: 'scatter',
-  data: {datasets: [{label: 'Yearly CO2 vs temperature', data: co2.map(r => ({x: r[1], y: r[2]})), backgroundColor: '#1F3864'}]},
-  options: {scales: {x: {title: {display: true, text: 'CO2 (ppm)'}},
-                     y: {title: {display: true, text: 'Land temperature'}}}}});
+  data: {datasets: [{label: 'One dot = one year (world data)', data: co2.map(r => ({x: r[1], y: r[2], year: r[0]})),
+    backgroundColor: '#4DA3FF', hoverBackgroundColor: '#FFD34D', pointRadius: 4, pointHoverRadius: 8, pointHitRadius: 12}]},
+  options: {interaction: {mode: 'nearest', intersect: true},
+    plugins: {tooltip: {enabled: true, backgroundColor: '#0A1B33', borderColor: '#2E7CF6',
+      borderWidth: 1, titleColor: '#FFFFFF', bodyColor: '#EAF3FF', padding: 10, displayColors: false,
+      callbacks: {title: items => 'Year ' + items[0].raw.year,
+                  label: item => 'CO2 in the air: ' + item.parsed.x + ' ppm',
+                  afterLabel: item => 'World land temperature: ' + item.parsed.y.toFixed(2) + ' C (difference from the old normal)'}}},
+    scales: {x: {title: {display: true, text: 'CO2 in the air (ppm) - whole world'}},
+             y: {title: {display: true, text: 'World land temperature (C)'}}}}});
 </script>
 {% endblock %}
