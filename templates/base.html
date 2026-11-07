@@ -27,8 +27,8 @@
       <a href="{{ url_for('correlation') }}"{% if request.path == url_for('correlation') %} class="active"{% endif %}>&#128279; Correlation</a>
       <a href="{{ url_for('weather_page') }}"{% if request.path == url_for('weather_page') %} class="active"{% endif %}>&#127780; Live Weather</a>
       <a href="{{ url_for('upload') }}"{% if request.path == url_for('upload') %} class="active"{% endif %}>&#9729; Upload Data</a>
-      <a href="{{ url_for('feedback') }}"{% if request.path == url_for('feedback') %} class="active"{% endif %}>&#128172; Feedback and Support</a>
-      <a href="{{ url_for('help_page') }}"{% if request.path == url_for('help_page') %} class="active"{% endif %}>&#10067; Help and FAQ</a>
+      <a href="{{ url_for('feedback') }}"{% if request.path == url_for('feedback') %} class="active"{% endif %}>&#128172; Feedback</a>
+      <a href="{{ url_for('help_page') }}"{% if request.path == url_for('help_page') %} class="active"{% endif %}>&#10067; Help</a>
       {% if session.get('role') == 'Administrator' %}
       <a href="{{ url_for('admin') }}"{% if request.path == url_for('admin') %} class="active"{% endif %}>&#9881; Admin</a>
       {% endif %}
