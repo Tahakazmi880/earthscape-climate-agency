@@ -1,88 +1,146 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Anomaly Alerts</h1>
-<div class="panel">
-  <p>An alert is raised when a month's average temperature is <b>{{ threshold }} C or more above its normal
-  (baseline) temperature</b>, where the baseline is the 1951 to 1980 average of the same month for Pakistan.
-  Between 2001 and 2013, {{ months_checked }} months were checked and <b>{{ alerts|length }} alerts</b> were generated.</p>
-  <label>Country / Region</label>
-  <select id="alertCountry" style="max-width:260px">
-    {% for c in countries %}
-    <option value="{{ c }}" {% if c == 'Pakistan' %}selected{% endif %}>{{ c }}</option>
-    {% endfor %}
-  </select>
-  <p id="alertNote">Pakistan is the project country, so its alerts below are month by month. Select any other
-  country or region and its hot years are calculated live from the project dataset, using that country's own
-  1951 to 1980 average as its normal.</p>
-  <div id="countryAlerts"></div>
-  <script>
-  document.getElementById('alertCountry').addEventListener('change', async (e) => {
-    const c = e.target.value;
-    const box = document.getElementById('countryAlerts');
-    const pak = document.getElementById('pakTable');
-    if (c === 'Pakistan') { box.innerHTML = ''; pak.style.display = ''; return; }
-    box.innerHTML = '<p>Calculating alerts for ' + c + '...</p>';
-    const r = await fetch('/api/yearly-alerts/' + encodeURIComponent(c));
-    const d = await r.json();
-    if (d.error) { box.innerHTML = '<p>' + d.error + '</p>'; pak.style.display = ''; return; }
-    pak.style.display = 'none';
-    let h = '<h3>Alerts for ' + d.country + ' (yearly)</h3>' +
-      '<p>Normal (1951 to 1980 average): ' + d.baseline + ' C. Years checked from 2001: ' + d.years_checked +
-      '. Alerts found: <b>' + d.rows.length + '</b> (a year alerts when it is ' + d.threshold + ' C or more above normal).</p>';
-    if (d.rows.length) {
-      h += '<table><tr><th>#</th><th>Year</th><th>Actual temperature</th><th>Baseline (normal)</th><th>Above normal</th><th>Level</th></tr>';
-      d.rows.forEach((row, i) => {
-        const lvl = row[3] >= 3 ? 'Severe' : row[3] >= 2 ? 'High' : 'Moderate';
-        const cls = row[3] >= 3 ? 'severe' : row[3] >= 2 ? 'high' : '';
-        h += '<tr class="' + cls + '"><td>' + (i + 1) + '</td><td>' + row[0] + '</td><td>' + row[1] +
-             ' C</td><td>' + row[2] + ' C</td><td>+' + row[3] + ' C</td><td>' + lvl + '</td></tr>';
-      });
-      h += '</table>';
-    } else {
-      h += '<p>No year crossed the alert limit for ' + d.country + '.</p>';
-    }
-    box.innerHTML = h;
-  });
-  </script>
-  <h2>Live Anomaly Checker (Pakistan baseline)</h2>
-  <p>Check any month yourself: enter its average temperature and the system compares it with the
-  1951 to 1980 baseline right now and tells you whether an alert would be raised.</p>
-  <label>Month</label>
-  <select id="chkMonth" style="max-width:220px">
-    <option value="1">January</option><option value="2">February</option><option value="3">March</option>
-    <option value="4">April</option><option value="5">May</option><option value="6" selected>June</option>
-    <option value="7">July</option><option value="8">August</option><option value="9">September</option>
-    <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-  </select>
-  <label>Average temperature of that month (C)</label>
-  <input type="number" step="0.1" min="-60" max="50" id="chkTemp" value="32.5" style="max-width:220px">
-  <button type="button" id="chkBtn">Check</button>
-  <div id="chkResult" class="statsline"></div>
-  <script>
-  document.getElementById('chkBtn').addEventListener('click', async () => {
-    const m = document.getElementById('chkMonth').value;
-    const t = document.getElementById('chkTemp').value;
-    const r = await fetch('/api/anomaly-check?month=' + m + '&temp=' + encodeURIComponent(t));
-    const d = await r.json();
-    const el = document.getElementById('chkResult');
-    if (d.error) { el.textContent = d.error; el.style.color = '#B45309'; return; }
-    el.textContent = d.month + ': actual ' + d.temperature + ' C, baseline ' + d.baseline + ' C, difference +' +
-      d.difference + ' C. ' + (d.alert ? 'ALERT RAISED (' + d.level + '): this month is abnormally hot.' :
-      'No alert: this month is within the normal range.');
-    el.style.color = d.alert ? '#C00000' : '#2E7D32';
-  });
-  </script>
-
-  <div id="pakTable">
-  <table>
-    <tr><th>#</th><th>Month</th><th>Actual temperature</th><th>Baseline (normal)</th><th>Above normal</th><th>Level</th></tr>
-    {% for d, a, b, x in alerts %}
-    <tr class="{% if x >= 3 %}severe{% elif x >= 2 %}high{% endif %}">
-      <td>{{ loop.index }}</td><td>{{ d }}</td><td>{{ a }} C</td><td>{{ b }} C</td><td>+{{ x }} C</td>
-      <td>{% if x >= 3 %}Severe{% elif x >= 2 %}High{% else %}Moderate{% endif %}</td>
-    </tr>
-    {% endfor %}
-  </table>
+<div class="alertbanner">
+  <div class="bhead">
+    <div>
+      <h1>&#9888; Anomaly Alerts</h1>
+      <div class="bsub">Stay informed about temperature anomalies and climate alerts.</div>
+    </div>
+    <span class="alertpill"><span class="dot">&#9679;</span> {{ alerts|length }} Active Alerts</span>
+  </div>
+  <div class="brow">
+    <div class="bigtemp">
+      <div class="n">&#127777; +{{ threshold }}&deg;C</div>
+      <div class="l">Above Normal</div>
+    </div>
+    <div class="bmid">An alert is raised when a month's average temperature is {{ threshold }}&deg;C or more above its
+    normal (baseline) temperature, where the baseline is the 1951 to 1980 average of the same month for Pakistan.</div>
+    <div class="bright">
+      <div><b>Affected Period</b><br>2001 &ndash; 2013<br>{{ months_checked }} months checked</div>
+      <canvas id="sparkChart" height="55"></canvas>
+    </div>
   </div>
 </div>
+
+<div class="tabs">
+  <button type="button" class="tabbtn active" id="tabBtnChecker">&#128200; Live Anomaly Checker</button>
+  <button type="button" class="tabbtn" id="tabBtnData">&#128197; Monthly Data</button>
+</div>
+
+<div id="tabChecker">
+  <div class="checkergrid">
+    <div class="panel">
+      <p><b>&#9432;</b> Check any month yourself: enter its average temperature and the system compares it with the
+      1951 to 1980 baseline right now.</p>
+      <label>Month</label>
+      <select id="chkMonth" style="max-width:220px">
+        <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+        <option value="4">April</option><option value="5">May</option><option value="6" selected>June</option>
+        <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+        <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+      </select>
+      <label>Average temperature of that month (&deg;C)</label>
+      <input type="number" step="0.1" min="-60" max="50" id="chkTemp" value="32.5" style="max-width:220px">
+      <br>
+      <button type="button" id="chkBtn">Check Analysis &#8594;</button>
+      <div id="chkResult" class="statsline"></div>
+    </div>
+    <div class="insights">
+      <h2>&#128202; Climate Insights</h2>
+      <div class="row"><span class="tick">&#10003;</span>+{{ threshold }}&deg;C anomaly threshold</div>
+      <div class="row"><span class="tick">&#10003;</span>Pakistan climate focus</div>
+      <div class="row"><span class="tick">&#10003;</span>1951&ndash;1980 baseline</div>
+      <div class="earthstrip"></div>
+      <div class="quote">&ldquo;Understanding climate. Protecting our future.&rdquo;</div>
+    </div>
+  </div>
+</div>
+
+<div id="tabData" style="display:none">
+  <div class="panel">
+    <label>Country / Region</label>
+    <select id="alertCountry" style="max-width:260px">
+      {% for c in countries %}
+      <option value="{{ c }}" {% if c == 'Pakistan' %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+    <p id="alertNote">Pakistan is the project country, so its alerts below are month by month. Select any other
+    country or region and its hot years are calculated live from the project dataset, using that country's own
+    1951 to 1980 average as its normal.</p>
+    <div id="countryAlerts"></div>
+    <div id="pakTable">
+      <h2>Temperature Data Records</h2>
+      <table>
+        <tr><th>#</th><th>Month</th><th>Actual Temperature</th><th>Baseline (Normal)</th><th>Above Normal</th><th>Level</th></tr>
+        {% for d, a, b, x in alerts %}
+        <tr class="{% if x >= 3 %}severe{% elif x >= 2 %}high{% endif %}">
+          <td>{{ loop.index }}</td><td>{{ d }}</td><td>{{ a }}&deg;C</td><td>{{ b }}&deg;C</td><td>+{{ x }}&deg;C</td>
+          <td>{% if x >= 3 %}<span class="pill severe">Severe</span>{% elif x >= 2 %}<span class="pill high">High</span>{% else %}<span class="pill mod">Moderate</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(name) {
+  document.getElementById('tabChecker').style.display = name === 'checker' ? '' : 'none';
+  document.getElementById('tabData').style.display = name === 'data' ? '' : 'none';
+  document.getElementById('tabBtnChecker').classList.toggle('active', name === 'checker');
+  document.getElementById('tabBtnData').classList.toggle('active', name === 'data');
+}
+document.getElementById('tabBtnChecker').addEventListener('click', () => showTab('checker'));
+document.getElementById('tabBtnData').addEventListener('click', () => showTab('data'));
+
+const sparkData = [{% for d, a, b, x in alerts %}{{ x }}{% if not loop.last %},{% endif %}{% endfor %}];
+new Chart(document.getElementById('sparkChart'), {type: 'line',
+  data: {labels: sparkData.map((_, i) => i + 1), datasets: [{data: sparkData, borderColor: '#FF5266',
+    backgroundColor: 'rgba(255,82,102,0.18)', fill: true, pointRadius: 0, borderWidth: 2}]},
+  options: {plugins: {legend: {display: false}}, scales: {x: {display: false}, y: {display: false}},
+    events: [], animation: false}});
+
+document.getElementById('chkBtn').addEventListener('click', async () => {
+  const m = document.getElementById('chkMonth').value;
+  const t = document.getElementById('chkTemp').value;
+  const r = await fetch('/api/anomaly-check?month=' + m + '&temp=' + encodeURIComponent(t));
+  const d = await r.json();
+  const el = document.getElementById('chkResult');
+  if (d.error) { el.textContent = d.error; el.style.color = '#FFB020'; return; }
+  el.textContent = d.month + ': actual ' + d.temperature + ' C, baseline ' + d.baseline + ' C, difference +' +
+    d.difference + ' C. ' + (d.alert ? 'ALERT RAISED (' + d.level + '): this month is abnormally hot.' :
+    'No alert: this month is within the normal range.');
+  el.style.color = d.alert ? '#FF6B74' : '#2BD96B';
+});
+
+document.getElementById('alertCountry').addEventListener('change', async (e) => {
+  const c = e.target.value;
+  const box = document.getElementById('countryAlerts');
+  const pak = document.getElementById('pakTable');
+  if (c === 'Pakistan') { box.innerHTML = ''; pak.style.display = ''; return; }
+  showTab('data');
+  box.innerHTML = '<p>Calculating alerts for ' + c + '...</p>';
+  const r = await fetch('/api/yearly-alerts/' + encodeURIComponent(c));
+  const d = await r.json();
+  if (d.error) { box.innerHTML = '<p>' + d.error + '</p>'; pak.style.display = ''; return; }
+  pak.style.display = 'none';
+  let h = '<h3>Alerts for ' + d.country + ' (yearly)</h3>' +
+    '<p>Normal (1951 to 1980 average): ' + d.baseline + ' C. Years checked from 2001: ' + d.years_checked +
+    '. Alerts found: <b>' + d.rows.length + '</b> (a year alerts when it is ' + d.threshold + ' C or more above normal).</p>';
+  if (d.rows.length) {
+    h += '<table><tr><th>#</th><th>Year</th><th>Actual temperature</th><th>Baseline (normal)</th><th>Above normal</th><th>Level</th></tr>';
+    d.rows.forEach((row, i) => {
+      const lvl = row[3] >= 3 ? 'Severe' : row[3] >= 2 ? 'High' : 'Moderate';
+      const cls = row[3] >= 3 ? 'severe' : row[3] >= 2 ? 'high' : '';
+      const pcls = row[3] >= 3 ? 'severe' : row[3] >= 2 ? 'high' : 'mod';
+      h += '<tr class="' + cls + '"><td>' + (i + 1) + '</td><td>' + row[0] + '</td><td>' + row[1] +
+           ' C</td><td>' + row[2] + ' C</td><td>+' + row[3] + ' C</td><td><span class="pill ' + pcls + '">' + lvl + '</span></td></tr>';
+    });
+    h += '</table>';
+  } else {
+    h += '<p>No year crossed the alert limit for ' + d.country + '.</p>';
+  }
+  box.innerHTML = h;
+});
+</script>
 {% endblock %}
