@@ -210,3 +210,27 @@ main { padding: 20px 24px; }
   .cform { grid-template-columns: 1fr; }
   .cform #chkBtn { grid-column: auto; }
 }
+
+/* ---------- dashboard boxes + page headings (same design language) ---------- */
+main > h1 { display: flex; align-items: center; gap: 11px; font-size: 22px; }
+main > h1::before { content: ""; width: 5px; height: 23px; border-radius: 3px; background: linear-gradient(180deg, #2E9BFF, #2BD96B); flex-shrink: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat-card { background: linear-gradient(180deg, rgba(17,36,66,0.92), rgba(10,22,42,0.94)); border: 1px solid #1C3A66; border-radius: 14px; padding: 15px 14px; display: flex; gap: 12px; align-items: flex-start; box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+.stat-ic { width: 38px; height: 38px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stat-ic .ic { width: 20px; height: 20px; }
+.stat-ic.b { background: rgba(46,155,255,0.16); color: #4DABFF; border: 1px solid rgba(46,155,255,0.45); }
+.stat-ic.g { background: rgba(43,217,107,0.13); color: #2BD96B; border: 1px solid rgba(43,217,107,0.45); }
+.stat-ic.c { background: rgba(56,189,248,0.13); color: #38BDF8; border: 1px solid rgba(56,189,248,0.45); }
+.stat-ic.r { background: rgba(255,82,102,0.13); color: #FF6B74; border: 1px solid rgba(255,82,102,0.5); }
+.stat-ic.o { background: rgba(255,159,69,0.13); color: #FF9F45; border: 1px solid rgba(255,159,69,0.5); }
+.stat-ic.v { background: rgba(167,139,250,0.14); color: #A78BFA; border: 1px solid rgba(167,139,250,0.5); }
+.stat-card .num { font-size: 23px; font-weight: bold; color: #fff; line-height: 1.15; }
+.stat-card .lab { color: #8FA9CC; font-size: 12.5px; margin-top: 3px; line-height: 1.4; }
+.panelhead { display: flex; align-items: center; gap: 9px; }
+.panelhead .ic { width: 19px; height: 19px; color: #5FB2FF; flex-shrink: 0; }
+.sumrow { display: flex; gap: 12px; align-items: flex-start; padding: 9px 0; border-bottom: 1px dashed rgba(120,160,220,0.22); }
+.sumrow.last { border-bottom: none; padding-bottom: 2px; }
+.sumrow p { margin: 0; }
+.sumnum { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(180deg, #2E9BFF, #0E5FE3); color: #fff; font-size: 13px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 3px 9px rgba(14,95,227,0.45); }
+@media (max-width: 1250px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
