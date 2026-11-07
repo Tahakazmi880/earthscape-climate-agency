@@ -5,7 +5,7 @@
   <img class="loginlogo" src="{{ url_for('static', filename='earth-logo.jpg') }}" alt="EarthScape logo">
   <h2>EarthScape<br><span>Climate Agency</span></h2>
   <p class="sub">Real-Time Climate Intelligence for a Sustainable Future</p>
-  {% with messages = get_flashed_messages() %}{% if messages %}<div class="loginflash">{{ messages[0] }}</div>{% endif %}{% endwith %}
+  {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="loginflash{% if messages[0][0] == 'error' %} err{% endif %}">{{ messages[0][1] }}</div>{% endif %}{% endwith %}
   <form method="post">
     <label>Username</label>
     <input type="text" name="username" required>
