@@ -45,6 +45,10 @@ def current_threshold():
 MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July",
                "August", "September", "October", "November", "December"]
 
+@app.context_processor
+def inject_alert_count():
+    return {"alert_count": len(ALERTS)}
+
 # ---------------- Users and roles ----------------
 USERS = {
     "admin":   {"password": generate_password_hash("admin123"),   "role": "Administrator", "name": "System Administrator"},
