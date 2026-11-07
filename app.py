@@ -9,7 +9,7 @@
 #               analyst / analyst123  (Analyst)
 # ============================================================
 
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, get_flashed_messages
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import csv, io, json, os, re, secrets, statistics, tempfile, time, urllib.parse, urllib.request, uuid
@@ -123,11 +123,18 @@ def login():
         p = request.form.get("password", "")
         user = USERS.get(u)
         if user and check_password_hash(user["password"], p):
+            get_flashed_messages()  # never carry an old error past a good login
             session["user"] = u
             session["role"] = user["role"]
             session["name"] = user["name"]
             return redirect(url_for("dashboard"))
-        flash("Invalid username or password.")
+        flash("Invalid username or password.", "error")
+        return redirect(url_for("login"))
+    # A successful login, or landing here while already signed in, must never
+    # carry an old error message onto the dashboard: clear any pending ones.
+    get_flashed_messages()
+    if "user" in session:
+        return redirect(url_for("dashboard"))
     return render_template("login.html")
 
 @app.route("/logout")
@@ -160,7 +167,7 @@ def signup():
         elif pw != confirm_pw:
             problem = "The two passwords do not match. Please type them again."
         if problem:
-            flash(problem)
+            flash(problem, "error")
             return render_template("signup.html", full_name=full_name, email=email, username=u)
         USERS[u] = {"password": generate_password_hash(pw), "role": "Analyst",
                     "name": full_name, "email": email}
@@ -182,7 +189,7 @@ def forgot():
             RECOVERY_REQUESTS[u] = {"code": generate_password_hash(code),
                                      "expires": time.time() + 1800}
             return render_template("forgot.html", step="code", username=u, code=code)
-        flash("No account found with that username.")
+        flash("No account found with that username.", "error")
     return render_template("forgot.html", step="request")
 
 @app.route("/reset", methods=["POST"])
@@ -193,13 +200,13 @@ def reset_password():
     confirm_pw = request.form.get("confirm_password", "")
     rec = RECOVERY_REQUESTS.get(u)
     if not rec or time.time() > rec["expires"] or not check_password_hash(rec["code"], code):
-        flash("That recovery code is wrong or has expired. Please request a new one.")
+        flash("That recovery code is wrong or has expired. Please request a new one.", "error")
         return redirect(url_for("forgot"))
     if len(new_pw) < 6:
-        flash("The new password must be at least 6 characters long.")
+        flash("The new password must be at least 6 characters long.", "error")
         return render_template("forgot.html", step="code", username=u, code=None)
     if new_pw != confirm_pw:
-        flash("The two passwords do not match. Please type them again.")
+        flash("The two passwords do not match. Please type them again.", "error")
         return render_template("forgot.html", step="code", username=u, code=None)
     USERS[u]["password"] = generate_password_hash(new_pw)
     save_user_password(u)
@@ -296,14 +303,22 @@ def api_country_model(name):
                     "note": "Official Model 2 (verified in Colab)." if m["official"] else
                             "Same Model 2 method (linear trend from 1950), calculated live from project data."})
 
-def yearly_anomalies(name, threshold):
-    """Years from 2001 onward whose yearly average is at least `threshold` C above
-    the country's own 1951 to 1980 yearly average. Computed live from project data."""
+def yearly_baseline(name):
+    """A country's own normal year: the average of its yearly temperatures from
+    1951 to 1980, computed live from the project data. None if too little data."""
     pts = dict(YEARLY.get(name, []))
     base_vals = [t for y, t in pts.items() if 1951 <= y <= 1980]
     if len(base_vals) < 10:
         return None
-    base = sum(base_vals) / len(base_vals)
+    return round(sum(base_vals) / len(base_vals), 2)
+
+def yearly_anomalies(name, threshold):
+    """Years from 2001 onward whose yearly average is at least `threshold` C above
+    the country's own 1951 to 1980 yearly average. Computed live from project data."""
+    pts = dict(YEARLY.get(name, []))
+    base = yearly_baseline(name)
+    if base is None:
+        return None
     rows = []
     for y in sorted(pts):
         if y >= 2001:
@@ -345,22 +360,44 @@ def api_predict():
 @app.route("/api/anomaly-check")
 @login_required
 def api_anomaly_check():
+    country = request.args.get("country", "Pakistan")
+    try:
+        temp = float(request.args.get("temp", ""))
+    except ValueError:
+        return jsonify({"error": "Enter a temperature to check."}), 400
+    if temp < -60 or temp > 50:
+        return jsonify({"error": "An average temperature of %g C is not physically possible. "
+                                 "Averages recorded on Earth fall roughly between -60 C and +45 C. "
+                                 "Please enter a realistic value." % temp}), 400
+    if country and country != "Pakistan":
+        # Other countries: the project data holds yearly records for them, so the
+        # check compares one full year with that country's own normal year.
+        base = yearly_baseline(country)
+        if base is None:
+            return jsonify({"error": "Not enough 1951 to 1980 data for " + country +
+                                     " to build its normal year."}), 404
+        try:
+            year = int(request.args.get("year", ""))
+        except ValueError:
+            return jsonify({"error": "Enter a year to check."}), 400
+        diff = round(temp - base, 2)
+        alert = diff >= current_threshold()
+        level = "Severe" if diff >= 3 else "High" if diff >= 2 else "Moderate" if alert else "Normal"
+        return jsonify({"mode": "year", "country": country, "label": "Year %d" % year,
+                        "temperature": temp, "baseline": base, "difference": diff,
+                        "alert": alert, "level": level, "threshold": current_threshold()})
     try:
         month = int(request.args.get("month", ""))
-        temp = float(request.args.get("temp", ""))
     except ValueError:
         return jsonify({"error": "Select a month and enter a temperature."}), 400
     if month < 1 or month > 12:
         return jsonify({"error": "Invalid month."}), 400
-    if temp < -60 or temp > 50:
-        return jsonify({"error": "A monthly average temperature of %g C is not physically possible. "
-                                 "Monthly averages recorded on Earth fall roughly between -60 C and +45 C. "
-                                 "Please enter a realistic value." % temp}), 400
     baseline = BASELINE[str(month)]
     diff = round(temp - baseline, 2)
     alert = diff >= current_threshold()
     level = "Severe" if diff >= 3 else "High" if diff >= 2 else "Moderate" if alert else "Normal"
-    return jsonify({"month": MONTH_NAMES[month - 1], "temperature": temp, "baseline": baseline,
+    return jsonify({"mode": "month", "country": "Pakistan", "label": MONTH_NAMES[month - 1],
+                    "month": MONTH_NAMES[month - 1], "temperature": temp, "baseline": baseline,
                     "difference": diff, "alert": alert, "level": level,
                     "threshold": current_threshold()})
 
@@ -714,7 +751,7 @@ def feedback():
             "by": session.get("user"),
         }
         if not entry["name"] or not entry["message"]:
-            flash("Please enter your name and a message before submitting.")
+            flash("Please enter your name and a message before submitting.", "error")
             return redirect(url_for("feedback"))
         items = read_feedback()
         items.append(entry)
@@ -763,10 +800,10 @@ def admin_reset_password():
     u = request.form.get("username", "").strip()
     new_pw = request.form.get("new_password", "")
     if u not in USERS:
-        flash("Unknown username.")
+        flash("Unknown username.", "error")
         return redirect(url_for("admin"))
     if len(new_pw) < 6:
-        flash("The new password must be at least 6 characters long.")
+        flash("The new password must be at least 6 characters long.", "error")
         return redirect(url_for("admin"))
     USERS[u]["password"] = generate_password_hash(new_pw)
     save_user_password(u)
@@ -781,10 +818,10 @@ def set_threshold():
     try:
         val = float(request.form.get("threshold", ""))
     except ValueError:
-        flash("Enter a valid threshold value.")
+        flash("Enter a valid threshold value.", "error")
         return redirect(url_for("admin"))
     if val < 0.5 or val > 5.0:
-        flash("Threshold must be between 0.5 and 5.0 C.")
+        flash("Threshold must be between 0.5 and 5.0 C.", "error")
         return redirect(url_for("admin"))
     _threshold_global[0] = val
     session["threshold"] = val
