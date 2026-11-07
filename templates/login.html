@@ -5,13 +5,31 @@
   <img class="loginlogo" src="{{ url_for('static', filename='earth-logo.jpg') }}" alt="EarthScape logo">
   <h2>EarthScape<br><span>Climate Agency</span></h2>
   <p class="sub">Real-Time Climate Intelligence for a Sustainable Future</p>
+  {% with messages = get_flashed_messages() %}{% if messages %}<div class="loginflash">{{ messages[0] }}</div>{% endif %}{% endwith %}
   <form method="post">
     <label>Username</label>
     <input type="text" name="username" required>
     <label>Password</label>
-    <input type="password" name="password" required>
+    <div class="passwrap">
+      <input type="password" name="password" id="loginPw" required>
+      <button type="button" class="showbtn" id="togglePw">Show</button>
+    </div>
     <button type="submit">Sign In</button>
   </form>
-  <p class="hint">Access is restricted to authorised agency users.</p>
+  <p class="forgotlink"><a href="{{ url_for('forgot') }}">Forgot password?</a></p>
+  <p class="hint">New to EarthScape? <a href="{{ url_for('signup') }}">Create an account</a></p>
+  <p class="hint">Open to everyone. New users can sign up and explore the climate data.</p>
 </div>
+<script>
+  (function () {
+    var btn = document.getElementById('togglePw');
+    var pw = document.getElementById('loginPw');
+    btn.addEventListener('click', function () {
+      var show = pw.type === 'password';
+      pw.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
+      pw.focus();
+    });
+  })();
+</script>
 {% endblock %}
