@@ -34,7 +34,7 @@
         <div class="brandname">EarthScape</div>
         <div class="brandsub">Climate Agency</div>
       </div>
-      <button type="button" class="menubtn" id="menuBtn" aria-label="Open menu">&#9776; Menu</button>
+      <button type="button" class="menubtn" id="menuBtn" aria-label="Open menu"><span class="burger"><span></span><span></span><span></span></span></button>
     </div>
     <nav class="sidenav">
       <a href="{{ url_for('dashboard') }}"{% if request.path == url_for('dashboard') %} class="active"{% endif %}>{{ ic('home') }} Dashboard</a>
