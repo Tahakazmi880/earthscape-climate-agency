@@ -6,33 +6,52 @@
 <title>{% block title %}EarthScape Climate Agency{% endblock %}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <script src="{{ url_for('static', filename='chart.umd.min.js') }}"></script>
+<script>if (window.Chart) { Chart.defaults.color = '#A9C3E4'; Chart.defaults.borderColor = 'rgba(140,170,220,0.16)'; Chart.defaults.font.family = 'Arial, Helvetica, sans-serif'; }</script>
 </head>
 <body>
 {% if session.get('user') %}
-<header>
-  <div class="brand">EarthScape Climate Agency</div>
-  <nav>
-    <a href="{{ url_for('dashboard') }}">Dashboard</a>
-    <a href="{{ url_for('explorer') }}">Data Explorer</a>
-    <a href="{{ url_for('predictions') }}">Predictions</a>
-    <a href="{{ url_for('alerts') }}">Alerts</a>
-    <a href="{{ url_for('correlation') }}">Correlation</a>
-    <a href="{{ url_for('weather_page') }}">Live Weather</a>
-    <a href="{{ url_for('upload') }}">Upload Data</a>
-    <a href="{{ url_for('feedback') }}">Feedback and Support</a>
-    <a href="{{ url_for('help_page') }}">Help and FAQ</a>
-    {% if session.get('role') == 'Administrator' %}
-    <a href="{{ url_for('admin') }}">Admin</a>
-    {% endif %}
-  </nav>
-  <div class="userbox">{{ session.get('name') }} ({{ session.get('role') }}) | <a href="{{ url_for('logout') }}">Logout</a></div>
-</header>
-<main>
-  {% with messages = get_flashed_messages() %}{% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}{% endwith %}
-  {% block content %}{% endblock %}
-  <footer class="foot">Data sources: Berkeley Earth Surface Temperature (Kaggle), NOAA CO2 records, Copernicus ERA5 via Our World in Data.<br>
-  Developed by Taha Kazmi (Enrollment No. student1514118) as an Aptech eProject: Big Data - EarthScape Climate Agency.</footer>
-</main>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebrand">
+      <div class="logo">&#127758;</div>
+      <div>
+        <div class="brandname">EarthScape</div>
+        <div class="brandsub">Climate Agency</div>
+      </div>
+    </div>
+    <nav class="sidenav">
+      <a href="{{ url_for('dashboard') }}"{% if request.path == url_for('dashboard') %} class="active"{% endif %}>&#127968; Dashboard</a>
+      <a href="{{ url_for('explorer') }}"{% if request.path == url_for('explorer') %} class="active"{% endif %}>&#128202; Data Explorer</a>
+      <a href="{{ url_for('predictions') }}"{% if request.path == url_for('predictions') %} class="active"{% endif %}>&#128200; Predictions</a>
+      <a href="{{ url_for('alerts') }}"{% if request.path == url_for('alerts') %} class="active"{% endif %}>&#128276; Alerts</a>
+      <a href="{{ url_for('correlation') }}"{% if request.path == url_for('correlation') %} class="active"{% endif %}>&#128279; Correlation</a>
+      <a href="{{ url_for('weather_page') }}"{% if request.path == url_for('weather_page') %} class="active"{% endif %}>&#127780; Live Weather</a>
+      <a href="{{ url_for('upload') }}"{% if request.path == url_for('upload') %} class="active"{% endif %}>&#9729; Upload Data</a>
+      <a href="{{ url_for('feedback') }}"{% if request.path == url_for('feedback') %} class="active"{% endif %}>&#128172; Feedback and Support</a>
+      <a href="{{ url_for('help_page') }}"{% if request.path == url_for('help_page') %} class="active"{% endif %}>&#10067; Help and FAQ</a>
+      {% if session.get('role') == 'Administrator' %}
+      <a href="{{ url_for('admin') }}"{% if request.path == url_for('admin') %} class="active"{% endif %}>&#9881; Admin</a>
+      {% endif %}
+    </nav>
+    <div class="sidecard">&#127758;<br><strong>A Greener Planet</strong><br>A Safer Tomorrow</div>
+    <div class="sidefoot">&copy; 2025 EarthScape Climate Agency</div>
+  </aside>
+  <div class="content">
+    <div class="topbar">
+      <div>
+        <div class="pagetitle">EarthScape <span>Climate Agency</span></div>
+        <div class="pagesub">Real-Time Climate Intelligence for a Sustainable Future</div>
+      </div>
+      <div class="userbox"><span class="livedot"></span> Live Data &nbsp;|&nbsp; {{ session.get('name') }} ({{ session.get('role') }}) &nbsp;|&nbsp; <a href="{{ url_for('logout') }}">Logout</a></div>
+    </div>
+    <main>
+      {% with messages = get_flashed_messages() %}{% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}{% endwith %}
+      {% block content %}{% endblock %}
+      <footer class="foot">Data sources: Berkeley Earth Surface Temperature (Kaggle), NOAA CO2 records, Copernicus ERA5 via Our World in Data.<br>
+      Developed by Taha Kazmi (Enrollment No. student1514118) as an Aptech eProject: Big Data - EarthScape Climate Agency.</footer>
+    </main>
+  </div>
+</div>
 {% else %}
 <main class="bare">
   {% block content_login %}{% endblock %}
