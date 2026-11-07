@@ -252,16 +252,27 @@ main > h1::before { content: ""; width: 5px; height: 23px; border-radius: 3px; b
 .codebox .codehint { color: #A9C3E4; font-size: 12.5px; line-height: 1.5; }
 
 /* ---------- phone layout: clean single column ---------- */
+.menubtn { display: none; }
 @media (max-width: 900px) {
   .layout { display: block; }
-  .sidebar { width: 100%; height: auto; position: static; padding: 14px 12px 10px; display: block; }
-  .sidenav { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding-bottom: 8px; scrollbar-width: none; }
-  .sidenav::-webkit-scrollbar { display: none; }
-  .sidenav a { flex: 0 0 auto; white-space: nowrap; padding: 8px 11px; font-size: 13.5px; gap: 7px; }
-  .sidenav a .ic { width: 16px; height: 16px; }
-  .navbadge { margin-left: 2px; min-width: 19px; height: 19px; font-size: 11px; }
+  .sidebar { width: 100%; height: auto; position: static; padding: 10px 12px 8px; display: block; }
+  .sidebrand { display: flex; align-items: center; gap: 10px; margin-bottom: 0; padding: 2px 2px 6px; }
+  .logoimg { width: 44px; height: 44px; }
+  .brandname { font-size: 17px; }
+  .brandsub { font-size: 11.5px; }
+  .menubtn { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; margin-top: 0; width: auto; padding: 8px 14px; font-size: 14px; border-radius: 9px; }
+  .sidenav { display: none; flex-direction: column; gap: 4px; padding: 8px 0 4px; }
+  .sidenav.open { display: flex; }
+  .sidenav a { padding: 11px 12px; font-size: 15px; }
+  .navbadge { margin-left: auto; }
   .sidecard { display: none; }
-  .sidefoot { padding-top: 2px; }
+  .sidefoot { display: none; }
   .hero { flex-direction: column; align-items: flex-start; }
   .herouser { flex-wrap: wrap; }
+  .stat-grid { grid-template-columns: 1fr; gap: 12px; }
+  .stat-card { padding: 17px 16px; }
+  .stat-card .num { font-size: 26px; }
+  .stat-card .lab { font-size: 13.5px; }
+  .stat-ic { width: 44px; height: 44px; }
+  .stat-ic .ic { width: 23px; height: 23px; }
 }
