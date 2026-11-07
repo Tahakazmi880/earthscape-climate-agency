@@ -11,14 +11,15 @@ The dates are already filled with a working example, so you can also just press 
   <p class="small">Examples: Karachi, Lahore, Dubai, London, New York.</p>
 </div>
 
-<div class="panel">
+<div class="panel wxbox">
   <h2><span class="badge">1</span>How is the weather right now?</h2>
   <p class="small">Example: city is Karachi. Press the button and you see the temperature of this
   minute, the sky, the wind, and the water in the air.</p>
   <button type="button" id="wxNowBtn">Show weather now</button>
+  <div class="wxout"></div>
 </div>
 
-<div class="panel">
+<div class="panel wxbox">
   <h2><span class="badge">2</span>How was the weather on one day?</h2>
   <p class="small">Example: the date below is 15 June 2024. Press "Show this day" and you see that
   full day: how hot, how cold, how much rain. Press "Show 24 hours" and you see that same day
@@ -27,9 +28,10 @@ The dates are already filled with a working example, so you can also just press 
   <input type="date" id="wxDate" value="2024-06-15" style="max-width:220px">
   <button type="button" id="wxDayBtn">Show this day</button>
   <button type="button" id="wxHourBtn">Show 24 hours of this day</button>
+  <div class="wxout"></div>
 </div>
 
-<div class="panel">
+<div class="panel wxbox">
   <h2><span class="badge">3</span>How were many days together?</h2>
   <p class="small">Example: the dates below are 1 June 2024 to 30 June 2024, the full month of June.
   You get one average temperature for the whole month and the total rain of the whole month,
@@ -40,9 +42,10 @@ The dates are already filled with a working example, so you can also just press 
   <label>Last date</label>
   <input type="date" id="wxTo" value="2024-06-30" style="max-width:220px">
   <button type="button" id="wxRangeBtn">Show average and total</button>
+  <div class="wxout"></div>
 </div>
 
-<div class="panel">
+<div class="panel wxbox">
   <h2><span class="badge">4</span>Which city was hotter?</h2>
   <p class="small">Example: your city is Karachi and the second city is Dubai. Both are checked on
   the same dates of Box 3. You see both cities side by side, and one clear line tells you which
@@ -50,9 +53,10 @@ The dates are already filled with a working example, so you can also just press 
   <label>Second city</label>
   <input type="text" id="wxCity2" value="Dubai" style="max-width:300px">
   <button type="button" id="wxCompareBtn">Compare the two cities</button>
+  <div class="wxout"></div>
 </div>
 
-<div class="panel">
+<div class="panel wxbox">
   <h2><span class="badge">5</span>How was one full year?</h2>
   <p class="small">Example: the year below is 2024. You see all 12 months in one table, January to
   December. Real answer for Karachi 2024: July was the hottest month (31.43 C average) and
@@ -60,32 +64,32 @@ The dates are already filled with a working example, so you can also just press 
   <label>Year</label>
   <input type="number" id="wxYear" value="2024" min="1950" max="2100" style="max-width:160px">
   <button type="button" id="wxMonthsBtn">Show the 12 months</button>
+  <div class="wxout"></div>
 </div>
-
-<div id="wxResult" class="statsline"></div>
-<div id="wxCards"></div>
-<div id="wxSimple"></div>
-<div id="wxTable"></div>
-<div class="panel" id="wxChartPanel" style="display:none">
-  <canvas id="wxChart"></canvas>
-</div>
-<div id="wxCsv"></div>
 
 <script>
-const el = document.getElementById('wxResult');
-const cardsBox = document.getElementById('wxCards');
-const simpleBox = document.getElementById('wxSimple');
-const tb = document.getElementById('wxTable');
-const csvBox = document.getElementById('wxCsv');
+let el = null, cardsBox = null, simpleBox = null, tb = null, csvBox = null, chartPanel = null, chartCanvas = null;
 let chart = null;
 function cityVal() { return document.getElementById('wxCity').value; }
-function busy(msg) {
-  el.style.color = ''; el.textContent = msg;
-  cardsBox.innerHTML = ''; simpleBox.innerHTML = ''; tb.innerHTML = ''; csvBox.innerHTML = '';
-  document.getElementById('wxChartPanel').style.display = 'none';
+function useBox(btn) {
+  // Every box shows its own answer right under its own button: no long scroll.
+  const out = btn.closest('.wxbox').querySelector('.wxout');
+  out.innerHTML = '<div class="statsline"></div><div class="wxcards"></div><div class="wxsimple"></div>' +
+    '<div class="wxtable"></div><div class="wxchartwrap" style="display:none"><canvas></canvas></div><div class="wxcsv"></div>';
+  el = out.querySelector('.statsline');
+  cardsBox = out.querySelector('.wxcards');
+  simpleBox = out.querySelector('.wxsimple');
+  tb = out.querySelector('.wxtable');
+  csvBox = out.querySelector('.wxcsv');
+  chartPanel = out.querySelector('.wxchartwrap');
+  chartCanvas = chartPanel.querySelector('canvas');
   if (chart) { chart.destroy(); chart = null; }
 }
-function fail(msg) { el.textContent = msg; el.style.color = '#B45309'; cardsBox.innerHTML = ''; simpleBox.innerHTML = ''; tb.innerHTML = ''; csvBox.innerHTML = ''; }
+function busy(btn, msg) {
+  useBox(btn);
+  el.style.color = ''; el.textContent = msg;
+}
+function fail(msg) { el.textContent = msg; el.style.color = '#FFB020'; cardsBox.innerHTML = ''; simpleBox.innerHTML = ''; tb.innerHTML = ''; csvBox.innerHTML = ''; }
 function statCards(items) {
   cardsBox.innerHTML = '<div class="cards">' + items.map(x =>
     '<div class="card' + (x[2] ? ' alert' : '') + '"><div class="num">' + x[1] + '</div><div class="lab">' + x[0] + '</div></div>'
@@ -95,9 +99,13 @@ function simpleWords(text) {
   simpleBox.innerHTML = '<div class="flash"><b>In simple words:</b> ' + text + '</div>';
 }
 function drawChart(labels, datasets) {
-  document.getElementById('wxChartPanel').style.display = '';
+  chartPanel.style.display = '';
   if (chart) chart.destroy();
-  chart = new Chart(document.getElementById('wxChart'), {type: 'line', data: {labels: labels, datasets: datasets}});
+  chart = new Chart(chartCanvas, {type: 'line', data: {labels: labels, datasets: datasets},
+    options: {interaction: {mode: 'index', intersect: false},
+      plugins: {tooltip: {enabled: true, backgroundColor: '#0A1B33', borderColor: '#2E7CF6', borderWidth: 1,
+        titleColor: '#FFFFFF', bodyColor: '#EAF3FF', padding: 10,
+        callbacks: {label: item => ' ' + item.dataset.label + ': ' + item.parsed.y + ' C'}}}}});
 }
 function csvButton(filename, header, rows) {
   const btn = document.createElement('button');
@@ -111,8 +119,8 @@ function csvButton(filename, header, rows) {
   csvBox.innerHTML = ''; csvBox.appendChild(btn);
 }
 
-document.getElementById('wxNowBtn').addEventListener('click', async () => {
-  busy('Please wait, bringing the weather of now...');
+document.getElementById('wxNowBtn').addEventListener('click', async (ev) => {
+  busy(ev.currentTarget, 'Please wait, bringing the weather of now...');
   const r = await fetch('/api/weather?city=' + encodeURIComponent(cityVal()));
   const d = await r.json();
   if (d.error) { fail(d.error); return; }
@@ -130,9 +138,9 @@ document.getElementById('wxNowBtn').addEventListener('click', async () => {
     d.temperature + ' C hot. Today it can go up to ' + d.today_max + ' C and down to ' + d.today_min + ' C.');
 });
 
-document.getElementById('wxDayBtn').addEventListener('click', async () => {
+document.getElementById('wxDayBtn').addEventListener('click', async (ev) => {
   const date = document.getElementById('wxDate').value;
-  busy('Please wait, bringing that day...');
+  busy(ev.currentTarget, 'Please wait, bringing that day...');
   const r = await fetch('/api/weather-day?city=' + encodeURIComponent(cityVal()) + '&date=' + encodeURIComponent(date));
   const d = await r.json();
   if (d.error) { fail(d.error); return; }
@@ -150,9 +158,9 @@ document.getElementById('wxDayBtn').addEventListener('click', async () => {
     d.average_temperature + ' C, and ' + d.rainfall_mm + ' mm rain fell that day.');
 });
 
-document.getElementById('wxHourBtn').addEventListener('click', async () => {
+document.getElementById('wxHourBtn').addEventListener('click', async (ev) => {
   const date = document.getElementById('wxDate').value;
-  busy('Please wait, bringing all 24 hours...');
+  busy(ev.currentTarget, 'Please wait, bringing all 24 hours...');
   const r = await fetch('/api/weather-hourly?city=' + encodeURIComponent(cityVal()) + '&date=' + encodeURIComponent(date));
   const d = await r.json();
   if (d.error) { fail(d.error); return; }
@@ -182,8 +190,8 @@ async function fetchRange(city) {
   return r.json();
 }
 
-document.getElementById('wxRangeBtn').addEventListener('click', async () => {
-  busy('Please wait, counting the average and total...');
+document.getElementById('wxRangeBtn').addEventListener('click', async (ev) => {
+  busy(ev.currentTarget, 'Please wait, counting the average and total...');
   const d = await fetchRange(cityVal());
   if (d.error) { fail(d.error); return; }
   el.textContent = d.city + ', ' + d.country + ', from ' + d.from + ' to ' + d.to + ' (' + d.days + ' days)';
@@ -223,8 +231,8 @@ document.getElementById('wxRangeBtn').addEventListener('click', async () => {
     d.average_temperature + ' C hot. In the full period, ' + d.total_rainfall_mm + ' mm rain fell in total.');
 });
 
-document.getElementById('wxCompareBtn').addEventListener('click', async () => {
-  busy('Please wait, comparing the two cities...');
+document.getElementById('wxCompareBtn').addEventListener('click', async (ev) => {
+  busy(ev.currentTarget, 'Please wait, comparing the two cities...');
   const a = await fetchRange(cityVal());
   if (a.error) { fail(a.error); return; }
   const b = await fetchRange(document.getElementById('wxCity2').value);
@@ -251,9 +259,9 @@ document.getElementById('wxCompareBtn').addEventListener('click', async () => {
     ' got more rain (' + wetter.total_rainfall_mm + ' mm in total).');
 });
 
-document.getElementById('wxMonthsBtn').addEventListener('click', async () => {
+document.getElementById('wxMonthsBtn').addEventListener('click', async (ev) => {
   const y = document.getElementById('wxYear').value;
-  busy('Please wait, bringing the 12 months...');
+  busy(ev.currentTarget, 'Please wait, bringing the 12 months...');
   const r = await fetch('/api/weather-months?city=' + encodeURIComponent(cityVal()) + '&year=' + encodeURIComponent(y));
   const d = await r.json();
   if (d.error) { fail(d.error); return; }
