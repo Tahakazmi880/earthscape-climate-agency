@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Forgot Password - EarthScape{% endblock %}
+{% block content_login %}
+<div class="loginbox">
+  <img class="loginlogo" src="{{ url_for('static', filename='earth-logo.jpg') }}" alt="EarthScape logo">
+  <h2>Forgot Password</h2>
+  {% with messages = get_flashed_messages() %}{% if messages %}<div class="loginflash err">{{ messages[0] }}</div>{% endif %}{% endwith %}
+  {% if step == 'request' %}
+  <p class="sub">Type your username. The system will give you a recovery code, and then you can choose a new password yourself.</p>
+  <form method="post" action="{{ url_for('forgot') }}">
+    <label>Username</label>
+    <input type="text" name="username" required>
+    <button type="submit">Get recovery code</button>
+  </form>
+  {% else %}
+  <p class="sub">Account: <b>{{ username }}</b></p>
+  {% if code %}
+  <div class="codebox">
+    <div class="codelab">Your recovery code</div>
+    <div class="codeval">{{ code }}</div>
+    <div class="codehint">This code works for 30 minutes. Keep it safe, and type it below with your new password.</div>
+  </div>
+  {% endif %}
+  <form method="post" action="{{ url_for('reset_password') }}">
+    <input type="hidden" name="username" value="{{ username }}">
+    <label>Recovery code</label>
+    <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" required>
+    <label>New password (at least 6 characters)</label>
+    <div class="passwrap">
+      <input type="password" name="new_password" id="newPw" required>
+      <button type="button" class="showbtn" id="toggleNewPw">Show</button>
+    </div>
+    <label>Type the new password again</label>
+    <input type="password" name="confirm_password" id="confirmPw" required>
+    <button type="submit">Set new password</button>
+  </form>
+  <script>
+    (function () {
+      var btn = document.getElementById('toggleNewPw');
+      var a = document.getElementById('newPw');
+      var b = document.getElementById('confirmPw');
+      btn.addEventListener('click', function () {
+        var show = a.type === 'password';
+        a.type = show ? 'text' : 'password';
+        b.type = show ? 'text' : 'password';
+        btn.textContent = show ? 'Hide' : 'Show';
+      });
+    })();
+  </script>
+  {% endif %}
+  <p class="hint"><a href="{{ url_for('login') }}">Back to Sign In</a> &nbsp;|&nbsp; <a href="{{ url_for('signup') }}">Create an account</a></p>
+</div>
+{% endblock %}
